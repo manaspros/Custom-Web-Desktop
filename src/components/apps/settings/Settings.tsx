@@ -224,11 +224,11 @@ export default function Settings() {
   const [language, setLanguage] = useState("en-US");
   const [timeFormat, setTimeFormat] = useState("12h");
   const [availableWallpapers, setAvailableWallpapers] = useState([
-    { id: "default", path: "/wallpapers/default.jpg", name: "Default" },
-    { id: "landscape", path: "/wallpapers/landscape.jpg", name: "Landscape" },
+    { id: "default", path: "/wallpapers/default.png", name: "Default" },
+    { id: "landscape", path: "/wallpapers/landscape.png", name: "Landscape" },
     { id: "abstract", path: "/wallpapers/abstract.jpg", name: "Abstract" },
-    { id: "dark", path: "/wallpapers/dark.jpg", name: "Dark Theme" },
-    { id: "light", path: "/wallpapers/light.jpg", name: "Light Theme" },
+    { id: "dark", path: "/wallpapers/dark.png", name: "Dark Theme" },
+    { id: "light", path: "/wallpapers/light.png", name: "Light Theme" },
   ]);
 
   // Handle settings changes
