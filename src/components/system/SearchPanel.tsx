@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useOS } from "@/components/contexts/OSContext";
 
 export default function SearchPanel() {
-  const { apps, openApp, toggleSearchPanel } = useOS();
+  const { apps, launchApp, toggleSearchPanel } = useOS();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<typeof apps>([]);
   const searchPanelRef = useRef<HTMLDivElement>(null);
@@ -48,7 +48,7 @@ export default function SearchPanel() {
 
   // Handle app launch
   const handleAppLaunch = (appId: string) => {
-    openApp(appId);
+    launchApp(appId);
     toggleSearchPanel();
   };
 

@@ -19,6 +19,22 @@ export type AppType = {
   isPinned?: boolean;
 };
 
+// Define icon size options
+export type IconSize = "small" | "medium" | "large";
+
+// Define sort options
+export type SortOption = "name" | "size" | "type" | "date";
+
+// Define view settings interface
+export interface ViewSettings {
+  iconSize: IconSize;
+  autoArrange: boolean;
+  alignToGrid: boolean;
+  showIcons: boolean;
+  sortBy: SortOption;
+  sortDirection: "asc" | "desc";
+}
+
 // Define types for open window state
 export type WindowState = {
   id: string;
@@ -71,6 +87,27 @@ type OSContextType = {
   unpinApp: (appId: string) => void;
   launchApp: (appId: string) => void;
   clearNotifications: () => void;
+  iconSize: IconSize;
+  changeIconSize: (size: IconSize) => void;
+
+  // View settings
+  viewSettings: ViewSettings;
+  updateViewSettings: (settings: Partial<ViewSettings>) => void;
+  sortIcons: (by: SortOption) => void;
+  toggleAutoArrange: () => void;
+  toggleAlignToGrid: () => void;
+  toggleShowIcons: () => void;
+
+  // App management
+  deleteApp: (appId: string) => void;
+  cutApp: (appId: string) => void;
+  copyApp: (appId: string) => void;
+  pasteApp: () => void;
+  renameApp: (appId: string, newName: string) => void;
+  showAppProperties: (appId: string) => void;
+
+  // Clipboard
+  clipboard: any | null;
 };
 
 // Create the context with default values
@@ -106,6 +143,34 @@ export const OSContext = createContext<OSContextType>({
   unpinApp: () => {},
   launchApp: () => {},
   clearNotifications: () => {},
+  iconSize: "medium",
+  changeIconSize: () => {},
+
+  // View settings
+  viewSettings: {
+    iconSize: "medium",
+    autoArrange: false,
+    alignToGrid: true,
+    showIcons: true,
+    sortBy: "name",
+    sortDirection: "asc",
+  },
+  updateViewSettings: () => {},
+  sortIcons: () => {},
+  toggleAutoArrange: () => {},
+  toggleAlignToGrid: () => {},
+  toggleShowIcons: () => {},
+
+  // App management
+  deleteApp: () => {},
+  cutApp: () => {},
+  copyApp: () => {},
+  pasteApp: () => {},
+  renameApp: () => {},
+  showAppProperties: () => {},
+
+  // Clipboard
+  clipboard: null,
 });
 
 // Provider component
@@ -127,6 +192,23 @@ export const OSProvider: React.FC<{
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
   const [wallpaper, setWallpaper] = useState("/wallpapers/default.jpg");
   const [highestZIndex, setHighestZIndex] = useState(0);
+  const [iconSize, setIconSize] = useState<IconSize>("medium");
+
+  // View settings state
+  const [viewSettings, setViewSettings] = useState<ViewSettings>({
+    iconSize: "medium",
+    autoArrange: false,
+    alignToGrid: true,
+    showIcons: true,
+    sortBy: "name",
+    sortDirection: "asc",
+  });
+
+  // Clipboard state for cut/copy/paste operations
+  const [clipboard, setClipboard] = useState<any | null>(null);
+
+  // Deleted apps tracking (for undo functionality)
+  const [deletedApps, setDeletedApps] = useState<AppType[]>([]);
 
   // Initialize theme from localStorage
   useEffect(() => {
@@ -152,10 +234,23 @@ export const OSProvider: React.FC<{
     const savedPinnedApps = localStorage.getItem("win11-pinned-apps");
     const savedRecentApps = localStorage.getItem("win11-recent-apps");
     const savedWallpaper = localStorage.getItem("win11-wallpaper");
+    const savedIconSize = localStorage.getItem(
+      "win11-icon-size"
+    ) as IconSize | null;
 
     if (savedPinnedApps) setPinnedApps(JSON.parse(savedPinnedApps));
     if (savedRecentApps) setRecentApps(JSON.parse(savedRecentApps));
     if (savedWallpaper) setWallpaper(savedWallpaper);
+    if (savedIconSize) setIconSize(savedIconSize);
+
+    const savedViewSettings = localStorage.getItem("win11-view-settings");
+    if (savedViewSettings) {
+      try {
+        setViewSettings(JSON.parse(savedViewSettings));
+      } catch (e) {
+        console.error("Failed to parse view settings", e);
+      }
+    }
   }, []);
 
   // Update localStorage when settings change
@@ -164,9 +259,11 @@ export const OSProvider: React.FC<{
     localStorage.setItem("win11-pinned-apps", JSON.stringify(pinnedApps));
     localStorage.setItem("win11-recent-apps", JSON.stringify(recentApps));
     localStorage.setItem("win11-wallpaper", wallpaper);
+    localStorage.setItem("win11-icon-size", iconSize);
+    localStorage.setItem("win11-view-settings", JSON.stringify(viewSettings));
 
     document.documentElement.setAttribute("data-theme", theme);
-  }, [theme, pinnedApps, recentApps, wallpaper]);
+  }, [theme, pinnedApps, recentApps, wallpaper, iconSize, viewSettings]);
 
   // Window management functions
   const openApp = (appId: string) => {
@@ -357,6 +454,213 @@ export const OSProvider: React.FC<{
     setPinnedApps((prev) => prev.filter((id) => id !== appId));
   };
 
+  // Change icon size - update in both places for consistency
+  const changeIconSize = (size: IconSize) => {
+    setIconSize(size);
+    setViewSettings((prev) => ({ ...prev, iconSize: size }));
+    addNotification({
+      title: "Desktop",
+      message: `Icon size changed to ${size}`,
+      type: "info",
+    });
+  };
+
+  // Update view settings
+  const updateViewSettings = (settings: Partial<ViewSettings>) => {
+    setViewSettings((prev) => ({ ...prev, ...settings }));
+  };
+
+  // Sort icons
+  const sortIcons = (by: SortOption) => {
+    setViewSettings((prev) => {
+      // If same sort option, toggle direction
+      const direction =
+        prev.sortBy === by && prev.sortDirection === "asc" ? "desc" : "asc";
+      return { ...prev, sortBy: by, sortDirection: direction };
+    });
+
+    addNotification({
+      title: "Desktop",
+      message: `Sorted icons by ${by}`,
+      type: "info",
+    });
+  };
+
+  // Toggle auto arrange
+  const toggleAutoArrange = () => {
+    setViewSettings((prev) => {
+      const newValue = !prev.autoArrange;
+      return { ...prev, autoArrange: newValue };
+    });
+
+    addNotification({
+      title: "Desktop",
+      message: viewSettings.autoArrange
+        ? "Auto-arrange disabled"
+        : "Auto-arrange enabled",
+      type: "info",
+    });
+  };
+
+  // Toggle align to grid
+  const toggleAlignToGrid = () => {
+    setViewSettings((prev) => {
+      const newValue = !prev.alignToGrid;
+      return { ...prev, alignToGrid: newValue };
+    });
+
+    addNotification({
+      title: "Desktop",
+      message: viewSettings.alignToGrid
+        ? "Align to grid disabled"
+        : "Align to grid enabled",
+      type: "info",
+    });
+  };
+
+  // Toggle show desktop icons
+  const toggleShowIcons = () => {
+    setViewSettings((prev) => {
+      const newValue = !prev.showIcons;
+      return { ...prev, showIcons: newValue };
+    });
+
+    addNotification({
+      title: "Desktop",
+      message: viewSettings.showIcons
+        ? "Desktop icons hidden"
+        : "Desktop icons shown",
+      type: "info",
+    });
+  };
+
+  // App management functions
+  const deleteApp = (appId: string) => {
+    // Find the app
+    const app = apps.find((a) => a.id === appId);
+    if (!app) return;
+
+    // Store it for potential recovery
+    setDeletedApps((prev) => [...prev, app]);
+
+    // Remove from apps list (this is a simulation - in a real OS, you'd just hide the shortcut)
+    setApps((prev) => prev.filter((a) => a.id !== appId));
+
+    // Also remove from pinned/recent if needed
+    if (pinnedApps.includes(appId)) {
+      unpinApp(appId);
+    }
+
+    if (recentApps.includes(appId)) {
+      setRecentApps((prev) => prev.filter((id) => id !== appId));
+    }
+
+    addNotification({
+      title: "Delete",
+      message: `${app.name} moved to Recycle Bin`,
+      type: "info",
+    });
+  };
+
+  const cutApp = (appId: string) => {
+    // Find the app
+    const app = apps.find((a) => a.id === appId);
+    if (!app) return;
+
+    // Add to clipboard
+    setClipboard({ type: "cut", app });
+
+    addNotification({
+      title: "Cut",
+      message: `${app.name} cut to clipboard`,
+      type: "info",
+    });
+  };
+
+  const copyApp = (appId: string) => {
+    // Find the app
+    const app = apps.find((a) => a.id === appId);
+    if (!app) return;
+
+    // Add to clipboard
+    setClipboard({ type: "copy", app });
+
+    addNotification({
+      title: "Copy",
+      message: `${app.name} copied to clipboard`,
+      type: "info",
+    });
+  };
+
+  const pasteApp = () => {
+    if (!clipboard) {
+      addNotification({
+        title: "Paste",
+        message: "Nothing to paste",
+        type: "warning",
+      });
+      return;
+    }
+
+    const { type, app } = clipboard;
+
+    if (type === "cut") {
+      // For cut, we would actually move the icon
+      // But for this simulation, we'll just show a notification
+      addNotification({
+        title: "Paste",
+        message: `${app.name} pasted to desktop`,
+        type: "info",
+      });
+
+      // Clear clipboard after cut+paste
+      setClipboard(null);
+    } else if (type === "copy") {
+      // For copy, create a duplicate with a slightly different name
+      const newApp = {
+        ...app,
+        id: `${app.id}-copy-${Date.now()}`,
+        name: `${app.name} - Copy`,
+      };
+
+      setApps((prev) => [...prev, newApp]);
+
+      addNotification({
+        title: "Paste",
+        message: `${app.name} copied to desktop`,
+        type: "info",
+      });
+    }
+  };
+
+  const renameApp = (appId: string, newName: string) => {
+    // Find and rename the app
+    setApps((prev) =>
+      prev.map((app) => (app.id === appId ? { ...app, name: newName } : app))
+    );
+
+    addNotification({
+      title: "Rename",
+      message: `Item renamed to ${newName}`,
+      type: "info",
+    });
+  };
+
+  const showAppProperties = (appId: string) => {
+    // Find the app
+    const app = apps.find((a) => a.id === appId);
+    if (!app) return;
+
+    // In a real OS, this would open a properties dialog
+    // Here we'll just show a notification with some details
+    addNotification({
+      title: "Properties",
+      message: `${app.name} - Type: Application, Location: Desktop`,
+      type: "info",
+      persistent: true,
+    });
+  };
+
   // Generate a randomized position for new windows
   const generateWindowPosition = () => {
     const offsetX = Math.floor(Math.random() * 100);
@@ -367,86 +671,10 @@ export const OSProvider: React.FC<{
     };
   };
 
-  // Launch app (create new window)
+  // Launch app function - uses openApp for consistency
   const launchApp = (appId: string) => {
-    console.log("Launching app:", appId); // Add debug log
-
-    // App title mapping
-    const appTitles: { [key: string]: string } = {
-      fileExplorer: "File Explorer",
-      browser: "Microsoft Edge",
-      notepad: "Notepad",
-      calendar: "Calendar",
-      weather: "Weather",
-      calculator: "Calculator",
-      settings: "Settings",
-    };
-
-    // Default dimensions
-    const defaultDimensions: {
-      [key: string]: { width: number; height: number };
-    } = {
-      fileExplorer: { width: 800, height: 600 },
-      browser: { width: 1000, height: 700 },
-      notepad: { width: 600, height: 500 },
-      calendar: { width: 800, height: 600 },
-      weather: { width: 500, height: 700 },
-      calculator: { width: 350, height: 500 },
-      settings: { width: 900, height: 700 },
-    };
-
-    const title = appTitles[appId] || "Application";
-    const { width, height } = defaultDimensions[appId] || {
-      width: 800,
-      height: 600,
-    };
-    const { x, y } = generateWindowPosition();
-    const id = `window-${appId}-${Date.now()}`;
-
-    // Check if window is already open
-    const existingWindowIndex = openWindows.findIndex(
-      (window) => window.appId === appId && !window.isMinimized
-    );
-
-    if (existingWindowIndex !== -1) {
-      // Focus existing window
-      focusWindow(openWindows[existingWindowIndex].id);
-      return;
-    }
-
-    // Get highest z-index
-    const highestZIndex = openWindows.reduce(
-      (max, window) => Math.max(max, window.zIndex),
-      0
-    );
-
-    const newWindow: WindowState = {
-      id,
-      appId,
-      title,
-      isActive: true,
-      isMinimized: false,
-      isMaximized: false,
-      position: { x, y },
-      size: { width, height },
-      zIndex: highestZIndex + 1,
-    };
-
-    // Add the new window and update active window
-    setOpenWindows((prev) => {
-      // Set all other windows as inactive
-      const updatedWindows = prev.map((window) => ({
-        ...window,
-        isActive: false,
-      }));
-
-      return [...updatedWindows, newWindow];
-    });
-
-    setHighestZIndex((prev) => prev + 1);
-    setIsStartMenuOpen(false);
-    setIsNotificationCenterOpen(false);
-    setIsWidgetPanelOpen(false);
+    console.log("Launching app:", appId);
+    openApp(appId);
   };
 
   // Context value
@@ -482,6 +710,21 @@ export const OSProvider: React.FC<{
     unpinApp,
     launchApp,
     clearNotifications,
+    iconSize,
+    changeIconSize,
+    viewSettings,
+    updateViewSettings,
+    sortIcons,
+    toggleAutoArrange,
+    toggleAlignToGrid,
+    toggleShowIcons,
+    deleteApp,
+    cutApp,
+    copyApp,
+    pasteApp,
+    renameApp,
+    showAppProperties,
+    clipboard,
   };
 
   return (

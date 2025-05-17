@@ -10,8 +10,9 @@ interface AppShortcut {
 }
 
 export default function DesktopIcons() {
-  const { launchApp } = useOS();
+  const { launchApp, viewSettings } = useOS();
   const [selectedIcon, setSelectedIcon] = useState<string | null>(null);
+  const [sortedShortcuts, setSortedShortcuts] = useState<AppShortcut[]>([]);
 
   // Debug
   useEffect(() => {
@@ -63,6 +64,38 @@ export default function DesktopIcons() {
       appId: "settings",
     },
   ];
+
+  // Auto-sort app shortcuts when sort settings change
+  useEffect(() => {
+    const sorted = [...appShortcuts].sort((a, b) => {
+      // Apply current sort settings
+      const { sortBy, sortDirection } = viewSettings;
+
+      // Direction multiplier
+      const dirMult = sortDirection === "asc" ? 1 : -1;
+
+      switch (sortBy) {
+        case "name":
+          return dirMult * a.name.localeCompare(b.name);
+        case "type":
+          // For demo, use the app's ID as a stand-in for file type
+          return dirMult * a.appId.localeCompare(b.appId);
+        case "size":
+          // For demo, use random sizes (in a real system we'd use actual file sizes)
+          const sizeA = a.name.length * 1024; // Fake size based on name length
+          const sizeB = b.name.length * 1024;
+          return dirMult * (sizeA - sizeB);
+        case "date":
+          // For demo, just use alphabetical as we don't have real dates
+          return dirMult * a.name.localeCompare(b.name);
+        default:
+          return 0;
+      }
+    });
+
+    setSortedShortcuts(sorted);
+  }, [appShortcuts, viewSettings.sortBy, viewSettings.sortDirection]);
+
   // Handle single click (select icon)
   const handleIconClick = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -82,9 +115,62 @@ export default function DesktopIcons() {
       setSelectedIcon(null);
     }
   };
+
+  // Calculate grid and icon sizing from view settings
+  const getIconStyles = () => {
+    switch (viewSettings.iconSize) {
+      case "large":
+        return {
+          icon: {
+            containerWidth: "120px",
+            containerHeight: "140px",
+            iconSize: "48px",
+            fontSize: "14px",
+          },
+          grid: {
+            gridTemplateColumns: "repeat(auto-fill, 120px)",
+            gridAutoRows: "140px",
+          },
+        };
+      case "small":
+        return {
+          icon: {
+            containerWidth: "64px",
+            containerHeight: "80px",
+            iconSize: "24px",
+            fontSize: "11px",
+          },
+          grid: {
+            gridTemplateColumns: "repeat(auto-fill, 64px)",
+            gridAutoRows: "80px",
+          },
+        };
+      case "medium":
+      default:
+        return {
+          icon: {
+            containerWidth: "80px",
+            containerHeight: "100px",
+            iconSize: "32px",
+            fontSize: "12px",
+          },
+          grid: {
+            gridTemplateColumns: "repeat(auto-fill, 80px)",
+            gridAutoRows: "100px",
+          },
+        };
+    }
+  };
+
+  const styles = getIconStyles();
+
   return (
-    <div className="desktop-icons" onClick={handleDesktopClick}>
-      {appShortcuts.map((app) => (
+    <div
+      className="desktop-icons"
+      onClick={handleDesktopClick}
+      style={{ display: viewSettings.showIcons ? "grid" : "none" }}
+    >
+      {sortedShortcuts.map((app) => (
         <div
           key={app.id}
           className={`desktop-icon ${
@@ -92,19 +178,19 @@ export default function DesktopIcons() {
           }`}
           onClick={(e) => handleIconClick(app.id, e)}
           onDoubleClick={(e) => handleIconDoubleClick(app.appId, e)}
-          data-app-id={app.appId} // Important: Use appId, not id for better matching
+          data-app-id={app.appId}
         >
           <div className="icon-wrapper">
             <div className="app-icon">{app.icon}</div>
           </div>
           <div className="app-name">{app.name}</div>
         </div>
-      ))}{" "}
+      ))}
       <style jsx>{`
         .desktop-icons {
           display: grid;
-          grid-template-columns: repeat(auto-fill, 80px);
-          grid-auto-rows: 100px;
+          grid-template-columns: ${styles.grid.gridTemplateColumns};
+          grid-auto-rows: ${styles.grid.gridAutoRows};
           gap: 16px;
           padding: 24px;
           position: absolute;
@@ -112,8 +198,8 @@ export default function DesktopIcons() {
           left: 0;
           width: 100%;
           height: 100%;
-          z-index: 10; /* Increase z-index to ensure it's above the wallpaper but below windows */
-          pointer-events: auto; /* Allow interactions with all desktop icons area */
+          z-index: 10;
+          pointer-events: auto;
         }
 
         .desktop-icon {
@@ -125,11 +211,11 @@ export default function DesktopIcons() {
           padding: 8px;
           border-radius: 4px;
           transition: background-color 0.1s;
-          width: 80px;
-          height: 100px;
+          width: ${styles.icon.containerWidth};
+          height: ${styles.icon.containerHeight};
           user-select: none;
-          z-index: 11; /* Higher than desktop-icons container */
-          pointer-events: auto; /* Ensure interactions with icons */
+          z-index: 11;
+          pointer-events: auto;
         }
 
         .desktop-icon:hover {
@@ -144,17 +230,17 @@ export default function DesktopIcons() {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 48px;
-          height: 48px;
+          width: ${styles.icon.iconSize};
+          height: ${styles.icon.iconSize};
           margin-bottom: 8px;
         }
 
         .app-icon {
-          font-size: 32px;
+          font-size: ${styles.icon.iconSize};
         }
 
         .app-name {
-          font-size: 12px;
+          font-size: ${styles.icon.fontSize};
           text-align: center;
           color: var(--text-color);
           text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
