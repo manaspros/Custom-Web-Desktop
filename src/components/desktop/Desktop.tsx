@@ -39,10 +39,10 @@ export default function Desktop({ className }: DesktopProps) {
     targetType: "desktop",
     appData: null,
   });
-
   // Handle context menu
   const handleContextMenu = (e: MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
 
     // Ignore clicks on the taskbar completely
     if (e.target instanceof Element) {
@@ -52,12 +52,13 @@ export default function Desktop({ className }: DesktopProps) {
       }
     }
 
-    // Check if clicking on an app icon
+    // Check if clicking on an app icon (using a more robust approach)
     const target = e.target as HTMLElement;
     const appIcon = target.closest("[data-app-id]");
 
     // Handle right-clicks differently based on where they occurred
     if (appIcon) {
+      console.log("Right-clicked on app icon");
       // Right-click on app icon
       const appId = appIcon.getAttribute("data-app-id");
       const appName = appIcon.querySelector(".app-name")?.textContent || "";
@@ -74,6 +75,7 @@ export default function Desktop({ className }: DesktopProps) {
         },
       });
     } else {
+      console.log("Right-clicked on desktop");
       // Right-click on desktop or wallpaper
       setContextMenu({
         visible: true,
@@ -120,7 +122,6 @@ export default function Desktop({ className }: DesktopProps) {
       window.removeEventListener("click", handleWindowClick);
     };
   }, [contextMenu]);
-
   return (
     <div
       className={`desktop-container ${className || ""}`}
@@ -134,13 +135,10 @@ export default function Desktop({ className }: DesktopProps) {
           backgroundImage: `url(${wallpaper})`,
         }}
       />
-
-      {/* Desktop Icons */}
+      {/* Desktop Icons - Make sure it's defined before WindowManager */}
       <DesktopIcons />
-
       {/* Windows */}
       <WindowManager />
-
       {/* Context Menu - Set high z-index */}
       {contextMenu.visible && (
         <ContextMenu
@@ -151,17 +149,14 @@ export default function Desktop({ className }: DesktopProps) {
           appData={contextMenu.appData}
         />
       )}
-
       {/* UI Elements */}
       {isStartMenuOpen && <StartMenu />}
       {isNotificationCenterOpen && <NotificationCenter />}
       {isWidgetPanelOpen && <WidgetPanel />}
-
       {/* Taskbar - Keep separate from desktop event handling */}
       <div className="taskbar-container">
         <Taskbar className="taskbar-position" />
-      </div>
-
+      </div>{" "}
       <style jsx>{`
         .desktop-container {
           position: relative;
@@ -181,6 +176,7 @@ export default function Desktop({ className }: DesktopProps) {
           background-size: cover;
           background-position: center;
           z-index: 1;
+          pointer-events: auto; /* Allow right-clicks on wallpaper */
         }
 
         .taskbar-container {
@@ -190,11 +186,30 @@ export default function Desktop({ className }: DesktopProps) {
           width: 100%;
           z-index: 100;
           pointer-events: auto;
-        }
-
-        /* Override global styles for context menu */
+        } /* Override global styles for context menu */
         :global(.context-menu) {
           z-index: 9999 !important;
+          pointer-events: auto !important;
+        }
+
+        /* Ensure desktop icons receive proper events */
+        :global(.desktop-icons) {
+          pointer-events: auto !important;
+          z-index: 10 !important;
+        }
+
+        :global(.desktop-icon) {
+          pointer-events: auto !important;
+          z-index: 11 !important;
+        }
+
+        /* Make window portal respect pointer events */
+        :global(#window-portal) {
+          pointer-events: none !important; /* Base state is none */
+        }
+
+        :global(#window-portal .window) {
+          pointer-events: auto !important; /* But windows themselves should capture events */
         }
       `}</style>
     </div>

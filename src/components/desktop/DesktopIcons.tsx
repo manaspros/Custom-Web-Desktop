@@ -63,7 +63,6 @@ export default function DesktopIcons() {
       appId: "settings",
     },
   ];
-
   // Handle single click (select icon)
   const handleIconClick = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -76,8 +75,15 @@ export default function DesktopIcons() {
     launchApp(appId);
   };
 
+  // Clear selection when clicking elsewhere
+  const handleDesktopClick = (e: React.MouseEvent) => {
+    // Only clear if clicking directly on the desktop container, not on icons
+    if (e.currentTarget === e.target) {
+      setSelectedIcon(null);
+    }
+  };
   return (
-    <div className="desktop-icons">
+    <div className="desktop-icons" onClick={handleDesktopClick}>
       {appShortcuts.map((app) => (
         <div
           key={app.id}
@@ -93,8 +99,7 @@ export default function DesktopIcons() {
           </div>
           <div className="app-name">{app.name}</div>
         </div>
-      ))}
-
+      ))}{" "}
       <style jsx>{`
         .desktop-icons {
           display: grid;
@@ -107,8 +112,8 @@ export default function DesktopIcons() {
           left: 0;
           width: 100%;
           height: 100%;
-          z-index: 2; /* Above wallpaper but below windows */
-          pointer-events: none; /* Let events pass through to wallpaper */
+          z-index: 10; /* Increase z-index to ensure it's above the wallpaper but below windows */
+          pointer-events: auto; /* Allow interactions with all desktop icons area */
         }
 
         .desktop-icon {
@@ -123,8 +128,8 @@ export default function DesktopIcons() {
           width: 80px;
           height: 100px;
           user-select: none;
-          z-index: 3;
-          pointer-events: auto; /* Allow interactions with icons */
+          z-index: 11; /* Higher than desktop-icons container */
+          pointer-events: auto; /* Ensure interactions with icons */
         }
 
         .desktop-icon:hover {

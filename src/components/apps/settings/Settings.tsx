@@ -99,12 +99,29 @@ const SettingItem: React.FC<SettingItemProps> = ({
 interface ToggleSwitchProps {
   checked: boolean;
   onChange: () => void;
+  readOnly?: boolean;
 }
 
-const ToggleSwitch: React.FC<ToggleSwitchProps> = ({ checked, onChange }) => {
+const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
+  checked,
+  onChange,
+  readOnly = false,
+}) => {
+  // Create a proper onChange handler that prevents changes if readOnly
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!readOnly) {
+      onChange();
+    }
+  };
+
   return (
     <label className="toggle-switch">
-      <input type="checkbox" checked={checked} onChange={onChange} />
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={handleChange} // This ensures React doesn't complain
+        disabled={readOnly} // Using disabled instead of readOnly is more appropriate for checkboxes
+      />
       <span className="switch-slider"></span>
       <style jsx>{`
         .toggle-switch {

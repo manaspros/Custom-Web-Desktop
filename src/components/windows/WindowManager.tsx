@@ -22,6 +22,7 @@ export default function WindowManager() {
       portalContainer.style.width = "100%";
       portalContainer.style.height = "100%";
       portalContainer.style.zIndex = "20";
+      portalContainer.style.pointerEvents = "none"; // Allow clicks to pass through when no windows
       document.body.appendChild(portalContainer);
 
       // Clean up on unmount

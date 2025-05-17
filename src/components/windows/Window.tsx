@@ -173,7 +173,7 @@ export default function Window({ window, app }: WindowProps) {
     <div
       ref={windowRef}
       className={`window ${window.isActive ? "active" : ""}`}
-      style={style}
+      style={{ ...style, pointerEvents: "auto" }} // Ensure window catches clicks
       onClick={handleWindowClick}
     >
       {/* Window title bar */}
