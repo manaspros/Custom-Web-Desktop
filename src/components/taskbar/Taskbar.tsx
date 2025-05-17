@@ -54,6 +54,14 @@ export default function Taskbar({ className = "" }: TaskbarProps) {
     new Set([...pinnedApps, ...openWindows.map((w) => w.appId)])
   );
 
+  // Open resume function
+  const openResume = () => {
+    // Set the fileId to open
+    localStorage.setItem("pdf-open-file", "resume-pdf");
+    // Launch the PDF viewer
+    openApp("pdfviewer");
+  };
+
   // Prevent event propagation to Desktop component
   const handleTaskbarClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -84,6 +92,15 @@ export default function Taskbar({ className = "" }: TaskbarProps) {
             <path d="M21 13H13V21H21V13Z" fill="white" />
           </svg>
         </span>
+      </button>
+
+      {/* Resume Button - Added to bottom left */}
+      <button
+        className="resume-button"
+        onClick={openResume}
+        title="View Resume"
+      >
+        <span>📕</span>
       </button>
 
       {/* Taskbar Search - Updated to be clickable */}
@@ -198,6 +215,26 @@ export default function Taskbar({ className = "" }: TaskbarProps) {
           padding: 0 12px;
           z-index: 100;
           pointer-events: auto;
+        }
+
+        .resume-button {
+          padding: 8px;
+          margin: 0 4px;
+          border-radius: 6px;
+          background: none;
+          border: none;
+          color: white;
+          font-size: 20px;
+          transition: background-color 0.15s;
+          cursor: pointer;
+        }
+
+        .resume-button:hover {
+          background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .resume-button:active {
+          background-color: rgba(255, 255, 255, 0.2);
         }
 
         .taskbar-search {

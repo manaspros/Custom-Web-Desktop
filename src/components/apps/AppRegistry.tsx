@@ -5,6 +5,7 @@ import Terminal from "@/components/apps/terminal/Terminal";
 import Settings from "@/components/apps/settings/Settings";
 import Weather from "@/components/apps/weather/Weather";
 import Calendar from "@/components/apps/calendar/Calendar";
+import PDFViewer from "@/components/apps/pdfviewer/PDFViewer";
 import { AppType } from "@/components/contexts/OSContext";
 
 // Define all applications in the OS
@@ -71,6 +72,15 @@ const registeredApps: AppType[] = [
     defaultSize: { width: 800, height: 600 },
     isResizable: true,
     isPinned: true,
+  },
+  {
+    id: "pdfviewer",
+    name: "PDF Viewer",
+    icon: "📕",
+    component: PDFViewer,
+    defaultSize: { width: 800, height: 600 },
+    isResizable: true,
+    isPinned: false,
   },
 ];
 

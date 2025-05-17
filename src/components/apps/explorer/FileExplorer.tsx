@@ -1,137 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useOS } from "@/components/contexts/OSContext";
-
-// Define types for file system
-interface FileSystemItem {
-  id: string;
-  name: string;
-  type: "file" | "folder";
-  size?: number;
-  modified?: Date;
-  parent: string | null;
-  icon: string;
-}
+import { useOS, FileSystemItem } from "@/components/contexts/OSContext";
 
 export default function FileExplorer() {
-  const { addNotification } = useOS();
-
-  // Mock file system data
-  const [fileSystem, setFileSystem] = useState<FileSystemItem[]>([
-    {
-      id: "desktop",
-      name: "Desktop",
-      type: "folder",
-      parent: null,
-      modified: new Date("2023-10-01"),
-      icon: "🖥️",
-    },
-    {
-      id: "documents",
-      name: "Documents",
-      type: "folder",
-      parent: null,
-      modified: new Date("2023-10-01"),
-      icon: "📁",
-    },
-    {
-      id: "downloads",
-      name: "Downloads",
-      type: "folder",
-      parent: null,
-      modified: new Date("2023-10-01"),
-      icon: "📥",
-    },
-    {
-      id: "pictures",
-      name: "Pictures",
-      type: "folder",
-      parent: null,
-      modified: new Date("2023-09-25"),
-      icon: "🖼️",
-    },
-    {
-      id: "music",
-      name: "Music",
-      type: "folder",
-      parent: null,
-      modified: new Date("2023-09-20"),
-      icon: "🎵",
-    },
-    {
-      id: "doc1",
-      name: "Project Report.docx",
-      type: "file",
-      size: 2500,
-      parent: "documents",
-      modified: new Date("2023-10-10"),
-      icon: "📄",
-    },
-    {
-      id: "doc2",
-      name: "Resume.pdf",
-      type: "file",
-      size: 1200,
-      parent: "documents",
-      modified: new Date("2023-09-28"),
-      icon: "📄",
-    },
-    {
-      id: "img1",
-      name: "Vacation Photo.jpg",
-      type: "file",
-      size: 3500,
-      parent: "pictures",
-      modified: new Date("2023-09-15"),
-      icon: "🖼️",
-    },
-    {
-      id: "img2",
-      name: "Family.png",
-      type: "file",
-      size: 2800,
-      parent: "pictures",
-      modified: new Date("2023-08-20"),
-      icon: "🖼️",
-    },
-    {
-      id: "music1",
-      name: "Favorite Song.mp3",
-      type: "file",
-      size: 8500,
-      parent: "music",
-      modified: new Date("2023-07-15"),
-      icon: "🎵",
-    },
-    {
-      id: "dl1",
-      name: "Installation.exe",
-      type: "file",
-      size: 15000,
-      parent: "downloads",
-      modified: new Date("2023-10-05"),
-      icon: "📦",
-    },
-    {
-      id: "dl2",
-      name: "Dataset.zip",
-      type: "file",
-      size: 25000,
-      parent: "downloads",
-      modified: new Date("2023-09-30"),
-      icon: "🗜️",
-    },
-    {
-      id: "desktop1",
-      name: "Shortcut.lnk",
-      type: "file",
-      size: 1,
-      parent: "desktop",
-      modified: new Date("2023-10-10"),
-      icon: "🔗",
-    },
-  ]);
+  const {
+    addNotification,
+    fileSystem,
+    getFilesInFolder,
+    createFolder,
+    createFile,
+    deleteFileSystemItem,
+    getFileById,
+    renameFileSystemItem,
+    moveFileSystemItem,
+    launchApp,
+  } = useOS();
 
   const [currentPath, setCurrentPath] = useState<string[]>(["This PC"]);
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
@@ -143,6 +27,10 @@ export default function FileExplorer() {
     "name"
   );
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [showNewFolderInput, setShowNewFolderInput] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("New Folder");
 
   // Handle navigation to a folder
   const navigateToFolder = (folderId: string | null, folderName: string) => {
@@ -190,7 +78,7 @@ export default function FileExplorer() {
 
   // Get current directory contents
   const getCurrentContents = () => {
-    let contents = fileSystem.filter((item) => item.parent === currentFolder);
+    let contents = getFilesInFolder(currentFolder);
 
     // Sort contents
     contents = [...contents].sort((a, b) => {
@@ -205,16 +93,16 @@ export default function FileExplorer() {
             ? a.name.localeCompare(b.name)
             : b.name.localeCompare(a.name);
         case "type":
+          const aExt = a.name.split(".").pop() || "";
+          const bExt = b.name.split(".").pop() || "";
           return sortDirection === "asc"
-            ? a.type.localeCompare(b.type)
-            : b.type.localeCompare(a.type);
+            ? aExt.localeCompare(bExt)
+            : bExt.localeCompare(aExt);
         case "size":
           if (a.size === undefined) return -1;
           if (b.size === undefined) return 1;
           return sortDirection === "asc" ? a.size - b.size : b.size - a.size;
         case "modified":
-          if (!a.modified) return -1;
-          if (!b.modified) return 1;
           return sortDirection === "asc"
             ? a.modified.getTime() - b.modified.getTime()
             : b.modified.getTime() - a.modified.getTime();
@@ -235,6 +123,61 @@ export default function FileExplorer() {
     return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   };
 
+  // Format date for display
+  const formatDate = (date: Date): string => {
+    return date.toLocaleDateString() + " " + date.toLocaleTimeString();
+  };
+
+  // Get file type/extension
+  const getFileType = (item: FileSystemItem): string => {
+    if (item.type === "folder") return "Folder";
+
+    const ext = item.name.split(".").pop()?.toUpperCase() || "";
+    switch (ext) {
+      case "TXT":
+        return "Text Document";
+      case "PDF":
+        return "PDF Document";
+      case "DOC":
+      case "DOCX":
+        return "Word Document";
+      case "JPG":
+      case "JPEG":
+      case "PNG":
+        return "Image";
+      default:
+        return ext ? ext + " File" : "File";
+    }
+  };
+
+  // Get icon based on file type
+  const getFileIcon = (item: FileSystemItem): string => {
+    if (item.type === "folder") return "📁";
+
+    const ext = item.name.split(".").pop()?.toLowerCase() || "";
+    switch (ext) {
+      case "txt":
+        return "📄";
+      case "pdf":
+        return "📕";
+      case "doc":
+      case "docx":
+        return "📘";
+      case "jpg":
+      case "jpeg":
+      case "png":
+        return "🖼️";
+      case "mp3":
+      case "wav":
+        return "🎵";
+      case "mp4":
+      case "mov":
+        return "🎬";
+      default:
+        return "📄";
+    }
+  };
+
   // Toggle sort direction or change sort criteria
   const handleSortChange = (
     criteria: "name" | "size" | "type" | "modified"
@@ -252,42 +195,141 @@ export default function FileExplorer() {
     if (item.type === "folder") {
       navigateToFolder(item.id, item.name);
     } else {
-      // Simulate file opening
-      addNotification({
-        title: "File Explorer",
-        message: `Opening ${item.name}`,
-        icon: "explorer",
-      });
+      // Open file based on type
+      openFile(item);
+    }
+  };
+
+  // Open file based on type
+  const openFile = (file: FileSystemItem) => {
+    const ext = file.name.split(".").pop()?.toLowerCase() || "";
+
+    switch (ext) {
+      case "txt":
+        // Open in Notepad
+        launchApp("notepad");
+        // Pass the file ID to Notepad (we'll implement this later)
+        localStorage.setItem("notepad-open-file", file.id);
+        break;
+      case "pdf":
+        // Open in PDF Reader
+        launchApp("pdfviewer");
+        // Pass the file ID to PDF Reader
+        localStorage.setItem("pdf-open-file", file.id);
+        break;
+      default:
+        // For other files, just show a notification
+        addNotification({
+          title: "File Explorer",
+          message: `Opening ${file.name}`,
+          icon: "explorer",
+        });
     }
   };
 
   // Handle creating a new folder
   const handleCreateNewFolder = () => {
-    const newFolderName = "New Folder";
-    let uniqueName = newFolderName;
-    let counter = 1;
+    setShowNewFolderInput(true);
+    setNewFolderName("New Folder");
+  };
 
-    // Ensure folder name is unique
-    while (
-      fileSystem.some(
-        (item) => item.parent === currentFolder && item.name === uniqueName
-      )
-    ) {
-      uniqueName = `${newFolderName} (${counter})`;
-      counter++;
+  // Submit new folder creation
+  const submitNewFolder = () => {
+    if (newFolderName.trim()) {
+      createFolder(newFolderName, currentFolder);
+      setShowNewFolderInput(false);
     }
+  };
 
-    const newFolder: FileSystemItem = {
-      id: `folder-${Date.now()}`,
-      name: uniqueName,
-      type: "folder",
-      parent: currentFolder,
-      modified: new Date(),
-      icon: "📁",
-    };
+  // Handle renaming an item
+  const handleRename = () => {
+    if (!selectedItem) return;
 
-    setFileSystem([...fileSystem, newFolder]);
-    setSelectedItem(newFolder.id);
+    const item = getFileById(selectedItem);
+    if (item) {
+      setNewName(item.name);
+      setIsRenaming(true);
+    }
+  };
+
+  // Submit rename
+  const submitRename = () => {
+    if (selectedItem && newName.trim()) {
+      renameFileSystemItem(selectedItem, newName);
+      setIsRenaming(false);
+    }
+  };
+
+  // Handle deleting an item
+  const handleDelete = () => {
+    if (!selectedItem) return;
+
+    const item = getFileById(selectedItem);
+    if (item) {
+      if (confirm(`Are you sure you want to delete "${item.name}"?`)) {
+        deleteFileSystemItem(selectedItem);
+        setSelectedItem(null);
+      }
+    }
+  };
+
+  // Context menu
+  const handleContextMenu = (e: React.MouseEvent, item?: FileSystemItem) => {
+    e.preventDefault();
+
+    if (item) {
+      setSelectedItem(item.id);
+
+      // Show custom context menu for item
+      const contextMenu = document.createElement("div");
+      contextMenu.className = "custom-context-menu";
+      contextMenu.style.position = "absolute";
+      contextMenu.style.left = `${e.clientX}px`;
+      contextMenu.style.top = `${e.clientY}px`;
+      contextMenu.style.backgroundColor = "white";
+      contextMenu.style.boxShadow = "0 2px 10px rgba(0,0,0,0.2)";
+      contextMenu.style.padding = "8px 0";
+      contextMenu.style.borderRadius = "4px";
+      contextMenu.style.zIndex = "1000";
+
+      // Create menu items
+      const options = [
+        { label: "Open", action: () => handleItemDoubleClick(item) },
+        { label: "Rename", action: () => handleRename() },
+        { label: "Delete", action: () => handleDelete() },
+      ];
+
+      options.forEach((option) => {
+        const menuItem = document.createElement("div");
+        menuItem.innerText = option.label;
+        menuItem.style.padding = "6px 16px";
+        menuItem.style.cursor = "pointer";
+        menuItem.style.fontSize = "14px";
+        menuItem.onclick = () => {
+          option.action();
+          document.body.removeChild(contextMenu);
+        };
+        menuItem.onmouseover = () => {
+          menuItem.style.backgroundColor = "#f0f0f0";
+        };
+        menuItem.onmouseout = () => {
+          menuItem.style.backgroundColor = "transparent";
+        };
+        contextMenu.appendChild(menuItem);
+      });
+
+      document.body.appendChild(contextMenu);
+
+      // Close menu when clicking outside
+      const closeMenu = (e: MouseEvent) => {
+        if (!contextMenu.contains(e.target as Node)) {
+          document.body.removeChild(contextMenu);
+          document.removeEventListener("mousedown", closeMenu);
+        }
+      };
+
+      document.addEventListener("mousedown", closeMenu);
+    }
   };
 
   return (
@@ -313,7 +355,7 @@ export default function FileExplorer() {
                     if (index === 0) {
                       navigateToFolder(null, "This PC");
                     } else if (index < currentPath.length - 1) {
-                      // Find folder by name
+                      // Find folder by name (simplified navigation)
                       const folder = fileSystem.find(
                         (item) =>
                           item.type === "folder" && item.name === segment
@@ -360,7 +402,61 @@ export default function FileExplorer() {
         <button className="action-button" onClick={handleCreateNewFolder}>
           New Folder
         </button>
+        <button
+          className="action-button"
+          disabled={!selectedItem}
+          onClick={handleRename}
+        >
+          Rename
+        </button>
+        <button
+          className="action-button"
+          disabled={!selectedItem}
+          onClick={handleDelete}
+        >
+          Delete
+        </button>
       </div>
+
+      {/* New Folder Input */}
+      {showNewFolderInput && (
+        <div className="new-folder-input">
+          <input
+            type="text"
+            value={newFolderName}
+            onChange={(e) => setNewFolderName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") submitNewFolder();
+              if (e.key === "Escape") setShowNewFolderInput(false);
+            }}
+            autoFocus
+          />
+          <div className="input-actions">
+            <button onClick={submitNewFolder}>Create</button>
+            <button onClick={() => setShowNewFolderInput(false)}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {/* Rename Input */}
+      {isRenaming && (
+        <div className="rename-input">
+          <input
+            type="text"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") submitRename();
+              if (e.key === "Escape") setIsRenaming(false);
+            }}
+            autoFocus
+          />
+          <div className="input-actions">
+            <button onClick={submitRename}>Rename</button>
+            <button onClick={() => setIsRenaming(false)}>Cancel</button>
+          </div>
+        </div>
+      )}
 
       {viewMode === "details" ? (
         <div className="file-list-details">
@@ -429,22 +525,17 @@ export default function FileExplorer() {
                   className={selectedItem === item.id ? "selected" : ""}
                   onClick={() => setSelectedItem(item.id)}
                   onDoubleClick={() => handleItemDoubleClick(item)}
+                  onContextMenu={(e) => handleContextMenu(e, item)}
                 >
                   <td className="column-icon">
-                    <span className="item-icon">{item.icon}</span>
+                    <span className="item-icon">{getFileIcon(item)}</span>
                   </td>
                   <td className="column-name">{item.name}</td>
-                  <td className="column-type">
-                    {item.type === "folder"
-                      ? "Folder"
-                      : item.name.split(".").pop()?.toUpperCase()}
-                  </td>
+                  <td className="column-type">{getFileType(item)}</td>
                   <td className="column-size">
                     {item.type === "folder" ? "" : formatFileSize(item.size)}
                   </td>
-                  <td className="column-date">
-                    {item.modified?.toLocaleDateString()}
-                  </td>
+                  <td className="column-date">{formatDate(item.modified)}</td>
                 </tr>
               ))}
             </tbody>
@@ -460,8 +551,9 @@ export default function FileExplorer() {
               }`}
               onClick={() => setSelectedItem(item.id)}
               onDoubleClick={() => handleItemDoubleClick(item)}
+              onContextMenu={(e) => handleContextMenu(e, item)}
             >
-              <div className="item-icon">{item.icon}</div>
+              <div className="item-icon">{getFileIcon(item)}</div>
               <div className="item-name">{item.name}</div>
             </div>
           ))}
@@ -476,8 +568,9 @@ export default function FileExplorer() {
               }`}
               onClick={() => setSelectedItem(item.id)}
               onDoubleClick={() => handleItemDoubleClick(item)}
+              onContextMenu={(e) => handleContextMenu(e, item)}
             >
-              <span className="item-icon">{item.icon}</span>
+              <span className="item-icon">{getFileIcon(item)}</span>
               <span className="item-name">{item.name}</span>
             </div>
           ))}
@@ -487,8 +580,7 @@ export default function FileExplorer() {
       <div className="status-bar">
         <span>{getCurrentContents().length} items</span>
         <span>
-          {selectedItem &&
-            `Selected: ${fileSystem.find((i) => i.id === selectedItem)?.name}`}
+          {selectedItem && `Selected: ${getFileById(selectedItem)?.name}`}
         </span>
       </div>
 
@@ -593,16 +685,37 @@ export default function FileExplorer() {
           background-color: var(--bg-secondary);
         }
 
-        .action-button {
-          padding: 5px 10px;
-          border-radius: 4px;
-          border: 1px solid var(--button-border);
-          background-color: var(--button-bg);
-          cursor: pointer;
-          font-size: 13px;
+        .new-folder-input,
+        .rename-input {
+          padding: 16px;
+          background-color: var(--bg-secondary);
+          border-bottom: 1px solid var(--border-color);
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
         }
 
-        .action-button:hover {
+        .new-folder-input input,
+        .rename-input input {
+          padding: 8px;
+          border-radius: 4px;
+          border: 1px solid var(--border-color);
+        }
+
+        .input-actions {
+          display: flex;
+          gap: 8px;
+        }
+
+        .input-actions button {
+          padding: 6px 12px;
+          border-radius: 4px;
+          border: 1px solid var(--border-color);
+          background-color: var(--button-bg);
+          cursor: pointer;
+        }
+
+        .input-actions button:hover {
           background-color: var(--button-bg-hover);
         }
 

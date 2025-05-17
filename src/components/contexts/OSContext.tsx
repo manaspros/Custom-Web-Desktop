@@ -48,7 +48,22 @@ export type WindowState = {
   zIndex: number;
 };
 
-// Define the OS context state type
+// Define file system types
+export interface FileSystemItem {
+  id: string;
+  name: string;
+  type: "file" | "folder";
+  content?: string;
+  mimeType?: string;
+  size?: number;
+  created: Date;
+  modified: Date;
+  parent: string | null;
+  icon?: string;
+  path: string;
+}
+
+// Add to OSContextType
 type OSContextType = {
   theme: string;
   setTheme: (theme: string) => void;
@@ -108,6 +123,25 @@ type OSContextType = {
 
   // Clipboard
   clipboard: any | null;
+
+  // File System
+  fileSystem: FileSystemItem[];
+  createFile: (
+    name: string,
+    parent: string | null,
+    content?: string,
+    mimeType?: string
+  ) => string;
+  createFolder: (name: string, parent: string | null) => string;
+  deleteFileSystemItem: (id: string) => void;
+  getFileContent: (id: string) => string | undefined;
+  updateFileContent: (id: string, content: string) => void;
+  getFileById: (id: string) => FileSystemItem | undefined;
+  getFileByPath: (path: string) => FileSystemItem | undefined;
+  renameFileSystemItem: (id: string, newName: string) => void;
+  moveFileSystemItem: (id: string, newParent: string | null) => void;
+  getFilesInFolder: (folderId: string | null) => FileSystemItem[];
+  getParentPath: (item: FileSystemItem) => string;
 };
 
 // Create the context with default values
@@ -171,6 +205,20 @@ export const OSContext = createContext<OSContextType>({
 
   // Clipboard
   clipboard: null,
+
+  // File System
+  fileSystem: [],
+  createFile: () => "",
+  createFolder: () => "",
+  deleteFileSystemItem: () => {},
+  getFileContent: () => undefined,
+  updateFileContent: () => {},
+  getFileById: () => undefined,
+  getFileByPath: () => undefined,
+  renameFileSystemItem: () => {},
+  moveFileSystemItem: () => {},
+  getFilesInFolder: () => [],
+  getParentPath: () => "",
 });
 
 // Provider component
@@ -209,6 +257,9 @@ export const OSProvider: React.FC<{
 
   // Deleted apps tracking (for undo functionality)
   const [deletedApps, setDeletedApps] = useState<AppType[]>([]);
+
+  // File System state
+  const [fileSystem, setFileSystem] = useState<FileSystemItem[]>([]);
 
   // Initialize theme from localStorage
   useEffect(() => {
@@ -251,6 +302,25 @@ export const OSProvider: React.FC<{
         console.error("Failed to parse view settings", e);
       }
     }
+
+    const savedFileSystem = localStorage.getItem("win11-file-system");
+    if (savedFileSystem) {
+      try {
+        const parsedFs = JSON.parse(savedFileSystem);
+        // Convert date strings back to Date objects
+        const restoredFs = parsedFs.map((item: any) => ({
+          ...item,
+          created: new Date(item.created),
+          modified: new Date(item.modified),
+        }));
+        setFileSystem(restoredFs);
+      } catch (e) {
+        console.error("Failed to parse file system", e);
+        initializeDefaultFileSystem();
+      }
+    } else {
+      initializeDefaultFileSystem();
+    }
   }, []);
 
   // Update localStorage when settings change
@@ -261,9 +331,18 @@ export const OSProvider: React.FC<{
     localStorage.setItem("win11-wallpaper", wallpaper);
     localStorage.setItem("win11-icon-size", iconSize);
     localStorage.setItem("win11-view-settings", JSON.stringify(viewSettings));
+    localStorage.setItem("win11-file-system", JSON.stringify(fileSystem));
 
     document.documentElement.setAttribute("data-theme", theme);
-  }, [theme, pinnedApps, recentApps, wallpaper, iconSize, viewSettings]);
+  }, [
+    theme,
+    pinnedApps,
+    recentApps,
+    wallpaper,
+    iconSize,
+    viewSettings,
+    fileSystem,
+  ]);
 
   // Window management functions
   const openApp = (appId: string) => {
@@ -677,6 +756,335 @@ export const OSProvider: React.FC<{
     openApp(appId);
   };
 
+  // Create default file system structure
+  const initializeDefaultFileSystem = () => {
+    const defaultFs: FileSystemItem[] = [
+      {
+        id: "desktop",
+        name: "Desktop",
+        type: "folder",
+        created: new Date(),
+        modified: new Date(),
+        parent: null,
+        path: "/Desktop",
+      },
+      {
+        id: "documents",
+        name: "Documents",
+        type: "folder",
+        created: new Date(),
+        modified: new Date(),
+        parent: null,
+        path: "/Documents",
+      },
+      {
+        id: "downloads",
+        name: "Downloads",
+        type: "folder",
+        created: new Date(),
+        modified: new Date(),
+        parent: null,
+        path: "/Downloads",
+      },
+      {
+        id: "pictures",
+        name: "Pictures",
+        type: "folder",
+        created: new Date(),
+        modified: new Date(),
+        parent: null,
+        path: "/Pictures",
+      },
+      {
+        id: "readme",
+        name: "README.txt",
+        type: "file",
+        content:
+          "Welcome to Windows 11 Web Simulator!\nThis is a simple text file to demonstrate the file system.",
+        mimeType: "text/plain",
+        size: 97,
+        created: new Date(),
+        modified: new Date(),
+        parent: "documents",
+        path: "/Documents/README.txt",
+      },
+      {
+        id: "resume-pdf",
+        name: "Manas_Choudhary_Resume.pdf",
+        type: "file",
+        content: "/Manas_Choudhary_Resume.pdf", // Using local path
+        mimeType: "application/pdf",
+        size: 245678,
+        created: new Date(),
+        modified: new Date(),
+        parent: "documents",
+        path: "/Documents/Manas_Choudhary_Resume.pdf",
+      },
+      {
+        id: "notes",
+        name: "Notes.txt",
+        type: "file",
+        content:
+          "These are my personal notes.\n\n1. Remember to complete the project by Friday\n2. Buy groceries\n3. Schedule dentist appointment",
+        mimeType: "text/plain",
+        size: 128,
+        created: new Date(),
+        modified: new Date(),
+        parent: "desktop",
+        path: "/Desktop/Notes.txt",
+      },
+      {
+        id: "desktop-resume",
+        name: "Manas_Choudhary_Resume.pdf",
+        type: "file",
+        content: "/Manas_Choudhary_Resume.pdf", // Using local path
+        mimeType: "application/pdf",
+        size: 245678,
+        created: new Date(),
+        modified: new Date(),
+        parent: "desktop",
+        path: "/Desktop/Manas_Choudhary_Resume.pdf",
+      },
+    ];
+
+    setFileSystem(defaultFs);
+  };
+
+  // Get the parent path for an item
+  const getParentPath = (item: FileSystemItem): string => {
+    if (item.parent === null) {
+      return "/";
+    }
+
+    const parent = fileSystem.find((f) => f.id === item.parent);
+    if (!parent) return "/";
+
+    return parent.path;
+  };
+
+  // Get files in a specific folder
+  const getFilesInFolder = (folderId: string | null): FileSystemItem[] => {
+    return fileSystem.filter((item) => item.parent === folderId);
+  };
+
+  // Create a new file
+  const createFile = (
+    name: string,
+    parent: string | null,
+    content: string = "",
+    mimeType: string = "text/plain"
+  ): string => {
+    const parentItem = parent
+      ? fileSystem.find((item) => item.id === parent)
+      : null;
+    const parentPath = parentItem ? parentItem.path : "";
+
+    const newFile: FileSystemItem = {
+      id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name,
+      type: "file",
+      content,
+      mimeType,
+      size: content.length,
+      created: new Date(),
+      modified: new Date(),
+      parent,
+      path: `${parentPath}/${name}`,
+    };
+
+    setFileSystem((prev) => [...prev, newFile]);
+
+    addNotification({
+      title: "File Created",
+      message: `Created ${name}`,
+      type: "success",
+    });
+
+    return newFile.id;
+  };
+
+  // Create a new folder
+  const createFolder = (name: string, parent: string | null): string => {
+    const parentItem = parent
+      ? fileSystem.find((item) => item.id === parent)
+      : null;
+    const parentPath = parentItem ? parentItem.path : "";
+
+    const newFolder: FileSystemItem = {
+      id: `folder-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name,
+      type: "folder",
+      created: new Date(),
+      modified: new Date(),
+      parent,
+      path: `${parentPath}/${name}`,
+    };
+
+    setFileSystem((prev) => [...prev, newFolder]);
+
+    addNotification({
+      title: "Folder Created",
+      message: `Created folder ${name}`,
+      type: "success",
+    });
+
+    return newFolder.id;
+  };
+
+  // Delete a file or folder
+  const deleteFileSystemItem = (id: string) => {
+    const item = fileSystem.find((item) => item.id === id);
+    if (!item) return;
+
+    // If it's a folder, recursively delete all children
+    if (item.type === "folder") {
+      const childrenIds = getAllChildrenIds(id);
+      setFileSystem((prev) =>
+        prev.filter((item) => !childrenIds.includes(item.id))
+      );
+    }
+
+    setFileSystem((prev) => prev.filter((item) => item.id !== id));
+
+    addNotification({
+      title: "Deleted",
+      message: `${item.name} has been deleted`,
+      type: "info",
+    });
+  };
+
+  // Helper to get all children of a folder recursively
+  const getAllChildrenIds = (folderId: string): string[] => {
+    const directChildren = fileSystem.filter(
+      (item) => item.parent === folderId
+    );
+    const childrenIds = directChildren.map((child) => child.id);
+
+    const folderChildren = directChildren.filter(
+      (child) => child.type === "folder"
+    );
+    folderChildren.forEach((folder) => {
+      const nestedChildren = getAllChildrenIds(folder.id);
+      childrenIds.push(...nestedChildren);
+    });
+
+    return childrenIds;
+  };
+
+  // Get file content
+  const getFileContent = (id: string): string | undefined => {
+    const file = fileSystem.find(
+      (item) => item.id === id && item.type === "file"
+    );
+    return file?.content;
+  };
+
+  // Update file content
+  const updateFileContent = (id: string, content: string) => {
+    setFileSystem((prev) =>
+      prev.map((item) => {
+        if (item.id === id && item.type === "file") {
+          return {
+            ...item,
+            content,
+            size: content.length,
+            modified: new Date(),
+          };
+        }
+        return item;
+      })
+    );
+  };
+
+  // Get file by ID
+  const getFileById = (id: string): FileSystemItem | undefined => {
+    return fileSystem.find((item) => item.id === id);
+  };
+
+  // Get file by path
+  const getFileByPath = (path: string): FileSystemItem | undefined => {
+    return fileSystem.find((item) => item.path === path);
+  };
+
+  // Rename file or folder
+  const renameFileSystemItem = (id: string, newName: string) => {
+    const item = fileSystem.find((item) => item.id === id);
+    if (!item) return;
+
+    const parentPath = getParentPath(item);
+    const newPath = `${parentPath}/${newName}`;
+
+    setFileSystem((prev) =>
+      prev.map((fsItem) => {
+        if (fsItem.id === id) {
+          return {
+            ...fsItem,
+            name: newName,
+            modified: new Date(),
+            path: newPath,
+          };
+        }
+        return fsItem;
+      })
+    );
+
+    // If it's a folder, update paths of all children
+    if (item.type === "folder") {
+      updateChildrenPaths(id, item.path, newPath);
+    }
+  };
+
+  // Update paths of all children when a folder is renamed
+  const updateChildrenPaths = (
+    folderId: string,
+    oldBasePath: string,
+    newBasePath: string
+  ) => {
+    setFileSystem((prev) =>
+      prev.map((item) => {
+        if (item.path.startsWith(oldBasePath + "/")) {
+          const relativePath = item.path.substring(oldBasePath.length);
+          return {
+            ...item,
+            path: newBasePath + relativePath,
+          };
+        }
+        return item;
+      })
+    );
+  };
+
+  // Move file or folder to a new parent
+  const moveFileSystemItem = (id: string, newParent: string | null) => {
+    const item = fileSystem.find((item) => item.id === id);
+    if (!item) return;
+
+    const targetFolder = newParent
+      ? fileSystem.find((item) => item.id === newParent)
+      : null;
+    const newParentPath = targetFolder ? targetFolder.path : "";
+    const newPath = `${newParentPath}/${item.name}`;
+
+    setFileSystem((prev) =>
+      prev.map((fsItem) => {
+        if (fsItem.id === id) {
+          return {
+            ...fsItem,
+            parent: newParent,
+            modified: new Date(),
+            path: newPath,
+          };
+        }
+        return fsItem;
+      })
+    );
+
+    // If it's a folder, update paths of all children
+    if (item.type === "folder") {
+      updateChildrenPaths(id, item.path, newPath);
+    }
+  };
+
   // Context value
   const contextValue: OSContextType = {
     theme,
@@ -725,6 +1133,20 @@ export const OSProvider: React.FC<{
     renameApp,
     showAppProperties,
     clipboard,
+
+    // File System
+    fileSystem,
+    createFile,
+    createFolder,
+    deleteFileSystemItem,
+    getFileContent,
+    updateFileContent,
+    getFileById,
+    getFileByPath,
+    renameFileSystemItem,
+    moveFileSystemItem,
+    getFilesInFolder,
+    getParentPath,
   };
 
   return (

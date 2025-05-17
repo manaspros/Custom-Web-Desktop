@@ -22,10 +22,10 @@ export default function DesktopIcons() {
   // App shortcuts data - can be moved to a config file or context
   const appShortcuts: AppShortcut[] = [
     {
-      id: "file-explorer",
+      id: "shortcut-1",
       name: "File Explorer",
       icon: "📁",
-      appId: "fileExplorer",
+      appId: "explorer", // Make sure this matches the ID in AppRegistry.tsx
     },
     {
       id: "browser",

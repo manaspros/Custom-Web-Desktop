@@ -1,10 +1,13 @@
 import { useState, useRef, useEffect } from "react";
-import { useOS } from "@/components/contexts/OSContext";
+import { useOS, FileSystemItem } from "@/components/contexts/OSContext";
 
 export default function SearchPanel() {
-  const { apps, launchApp, toggleSearchPanel } = useOS();
+  const { apps, fileSystem, launchApp, toggleSearchPanel } = useOS();
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<typeof apps>([]);
+  const [searchResults, setSearchResults] = useState<{
+    apps: typeof apps;
+    files: FileSystemItem[];
+  }>({ apps: [], files: [] });
   const searchPanelRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -35,21 +38,81 @@ export default function SearchPanel() {
   // Update search results when query changes
   useEffect(() => {
     if (searchQuery.trim() === "") {
-      setSearchResults([]);
+      setSearchResults({ apps: [], files: [] });
       return;
     }
 
     const query = searchQuery.toLowerCase();
-    const results = apps.filter((app) =>
+
+    // Search apps
+    const appResults = apps.filter((app) =>
       app.name.toLowerCase().includes(query)
     );
-    setSearchResults(results);
-  }, [searchQuery, apps]);
+
+    // Search files
+    const fileResults = fileSystem.filter((item) =>
+      item.name.toLowerCase().includes(query)
+    );
+
+    setSearchResults({
+      apps: appResults,
+      files: fileResults,
+    });
+  }, [searchQuery, apps, fileSystem]);
 
   // Handle app launch
   const handleAppLaunch = (appId: string) => {
     launchApp(appId);
     toggleSearchPanel();
+  };
+
+  // Handle file open
+  const handleFileOpen = (item: FileSystemItem) => {
+    // Determine which app to use based on file type
+    const ext = item.name.split(".").pop()?.toLowerCase() || "";
+
+    if (item.type === "folder") {
+      // Open folder in File Explorer
+      launchApp("explorer");
+      // Set current folder
+      localStorage.setItem("explorer-open-folder", item.id);
+    } else if (ext === "txt") {
+      // Open in Notepad
+      launchApp("notepad");
+      localStorage.setItem("notepad-open-file", item.id);
+    } else if (ext === "pdf") {
+      // Open in PDF Viewer
+      launchApp("pdfviewer");
+      localStorage.setItem("pdf-open-file", item.id);
+    } else {
+      // For other files, open parent folder in explorer
+      launchApp("explorer");
+      localStorage.setItem("explorer-open-folder", item.parent || "");
+    }
+
+    toggleSearchPanel();
+  };
+
+  // Get icon for file type
+  const getFileIcon = (item: FileSystemItem): string => {
+    if (item.type === "folder") return "📁";
+
+    const ext = item.name.split(".").pop()?.toLowerCase() || "";
+    switch (ext) {
+      case "txt":
+        return "📄";
+      case "pdf":
+        return "📕";
+      case "doc":
+      case "docx":
+        return "📘";
+      case "jpg":
+      case "jpeg":
+      case "png":
+        return "🖼️";
+      default:
+        return "📄";
+    }
   };
 
   return (
@@ -80,25 +143,55 @@ export default function SearchPanel() {
             <div className="search-placeholder-icon">🔍</div>
             <p>Search for apps, settings, and files</p>
           </div>
-        ) : searchResults.length > 0 ? (
-          <div className="results-container">
-            <h3 className="results-title">Apps</h3>
-            <div className="app-results">
-              {searchResults.map((app) => (
-                <div
-                  key={app.id}
-                  className="app-result-item"
-                  onClick={() => handleAppLaunch(app.id)}
-                >
-                  <div className="app-result-icon">{app.icon}</div>
-                  <div className="app-result-name">{app.name}</div>
-                </div>
-              ))}
-            </div>
-          </div>
         ) : (
-          <div className="no-results">
-            <p>No results found for "{searchQuery}"</p>
+          <div className="results-container">
+            {searchResults.apps.length > 0 && (
+              <>
+                <h3 className="results-title">Apps</h3>
+                <div className="app-results">
+                  {searchResults.apps.map((app) => (
+                    <div
+                      key={app.id}
+                      className="app-result-item"
+                      onClick={() => handleAppLaunch(app.id)}
+                    >
+                      <div className="app-result-icon">{app.icon}</div>
+                      <div className="app-result-name">{app.name}</div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {searchResults.files.length > 0 && (
+              <>
+                <h3 className="results-title">Files</h3>
+                <div className="file-results">
+                  {searchResults.files.map((file) => (
+                    <div
+                      key={file.id}
+                      className="file-result-item"
+                      onClick={() => handleFileOpen(file)}
+                    >
+                      <div className="file-result-icon">
+                        {getFileIcon(file)}
+                      </div>
+                      <div className="file-result-info">
+                        <div className="file-result-name">{file.name}</div>
+                        <div className="file-result-path">{file.path}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {searchResults.apps.length === 0 &&
+              searchResults.files.length === 0 && (
+                <div className="no-results">
+                  <p>No results found for "{searchQuery}"</p>
+                </div>
+              )}
           </div>
         )}
       </div>
@@ -252,6 +345,52 @@ export default function SearchPanel() {
         .app-result-name {
           font-size: 14px;
           text-align: center;
+        }
+
+        .file-results {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          margin-bottom: 20px;
+        }
+
+        .file-result-item {
+          display: flex;
+          align-items: center;
+          padding: 8px 12px;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: background-color 0.2s;
+        }
+
+        .file-result-item:hover {
+          background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        :global([data-theme="dark"]) .file-result-item:hover {
+          background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .file-result-icon {
+          font-size: 24px;
+          margin-right: 12px;
+          width: 32px;
+          text-align: center;
+        }
+
+        .file-result-info {
+          flex: 1;
+        }
+
+        .file-result-name {
+          font-size: 14px;
+          font-weight: 500;
+        }
+
+        .file-result-path {
+          font-size: 12px;
+          opacity: 0.7;
+          margin-top: 2px;
         }
 
         .no-results {

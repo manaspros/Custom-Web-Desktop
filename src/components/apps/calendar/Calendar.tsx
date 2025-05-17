@@ -1,655 +1,559 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useOS } from "@/components/contexts/OSContext";
 
 interface CalendarProps {
-  isWidget?: boolean;
+  windowId?: string;
 }
 
-export default function Calendar({ isWidget = false }: CalendarProps) {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [events, setEvents] = useState<
-    {
-      id: string;
-      title: string;
-      date: Date;
-      time?: string;
-      isCompleted?: boolean;
-    }[]
-  >([]);
+export default function Calendar({ windowId = "default" }: CalendarProps) {
+  const { addNotification } = useOS();
 
-  // Mock events
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [events, setEvents] = useState<{
+    [key: string]: { title: string; time?: string }[];
+  }>({});
+  const [showAddEvent, setShowAddEvent] = useState(false);
+  const [newEventTitle, setNewEventTitle] = useState("");
+  const [newEventTime, setNewEventTime] = useState("");
+
+  // Load saved events
   useEffect(() => {
-    const mockEvents = [
-      {
-        id: "1",
-        title: "Team Meeting",
-        date: new Date(new Date().setDate(new Date().getDate() + 2)),
-        time: "10:00 AM",
-      },
-      {
-        id: "2",
-        title: "Doctor Appointment",
-        date: new Date(new Date().setDate(new Date().getDate() + 4)),
-        time: "2:30 PM",
-      },
-      {
-        id: "3",
-        title: "Submit Report",
-        date: new Date(),
-        time: "5:00 PM",
-        isCompleted: false,
-      },
-    ];
-    setEvents(mockEvents);
+    const savedEvents = localStorage.getItem("win11-calendar-events");
+    if (savedEvents) {
+      try {
+        setEvents(JSON.parse(savedEvents));
+      } catch (e) {
+        console.error("Failed to parse calendar events", e);
+      }
+    }
   }, []);
 
-  // Get days in month
-  const getDaysInMonth = (date: Date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
+  // Save events when they change
+  useEffect(() => {
+    if (Object.keys(events).length > 0) {
+      localStorage.setItem("win11-calendar-events", JSON.stringify(events));
+    }
+  }, [events]);
+
+  // Generate calendar days
+  const generateCalendarDays = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
 
     // Get the first day of the month
-    const firstDayOfMonth = new Date(year, month, 1).getDay();
+    const firstDay = new Date(year, month, 1);
+    const startDay = firstDay.getDay(); // 0 = Sunday, 1 = Monday, etc.
 
-    // Create an array of day objects
-    const days = [];
+    // Get the last day of the month
+    const lastDay = new Date(year, month + 1, 0);
+    const totalDays = lastDay.getDate();
 
-    // Add empty cells for days before the first day of month
-    for (let i = 0; i < firstDayOfMonth; i++) {
-      days.push({ day: 0, isCurrentMonth: false });
-    }
+    // Get days from previous month to fill the first week
+    const prevMonthLastDay = new Date(year, month, 0).getDate();
+    const prevMonthDays = Array.from({ length: startDay }, (_, i) => ({
+      day: prevMonthLastDay - startDay + i + 1,
+      currentMonth: false,
+      date: new Date(year, month - 1, prevMonthLastDay - startDay + i + 1),
+    }));
 
-    // Add days of current month
-    for (let i = 1; i <= daysInMonth; i++) {
-      days.push({ day: i, isCurrentMonth: true });
-    }
+    // Current month days
+    const currentMonthDays = Array.from({ length: totalDays }, (_, i) => ({
+      day: i + 1,
+      currentMonth: true,
+      date: new Date(year, month, i + 1),
+    }));
 
-    // Add empty cells to complete the last week if needed
-    const remainingCells = 42 - days.length; // 6 rows * 7 days = 42 cells
-    for (let i = 0; i < remainingCells; i++) {
-      days.push({ day: 0, isCurrentMonth: false });
-    }
+    // Next month days to complete the calendar (6 rows x 7 days = 42 cells total)
+    const totalCells = 42;
+    const remainingCells =
+      totalCells - prevMonthDays.length - currentMonthDays.length;
+    const nextMonthDays = Array.from({ length: remainingCells }, (_, i) => ({
+      day: i + 1,
+      currentMonth: false,
+      date: new Date(year, month + 1, i + 1),
+    }));
 
-    return days;
+    return [...prevMonthDays, ...currentMonthDays, ...nextMonthDays];
+  };
+
+  // Format date as a string key for events
+  const formatDateKey = (date: Date): string => {
+    return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
   };
 
   // Navigate to previous month
-  const goToPreviousMonth = () => {
+  const goToPrevMonth = () => {
     setCurrentDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1)
     );
   };
 
   // Navigate to next month
   const goToNextMonth = () => {
     setCurrentDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1)
     );
   };
 
-  // Format date
-  const formatDate = (date: Date): string => {
-    return date.toLocaleDateString("en-US", {
-      month: "long",
-      year: "numeric",
-    });
-  };
-
-  // Check if a date has events
-  const getEventsForDate = (day: number) => {
-    if (day === 0) return [];
-
-    const date = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      day
-    );
-    return events.filter(
-      (event) =>
-        event.date.getDate() === date.getDate() &&
-        event.date.getMonth() === date.getMonth() &&
-        event.date.getFullYear() === date.getFullYear()
-    );
-  };
-
-  // Check if a day is today
-  const isToday = (day: number): boolean => {
-    const today = new Date();
-    return (
-      day === today.getDate() &&
-      currentDate.getMonth() === today.getMonth() &&
-      currentDate.getFullYear() === today.getFullYear()
-    );
-  };
-
-  // Check if a day is selected
-  const isSelected = (day: number): boolean => {
-    return (
-      day === selectedDate.getDate() &&
-      currentDate.getMonth() === selectedDate.getMonth() &&
-      currentDate.getFullYear() === selectedDate.getFullYear()
-    );
+  // Go to today
+  const goToToday = () => {
+    setCurrentDate(new Date());
+    setSelectedDate(new Date());
   };
 
   // Handle day click
-  const handleDayClick = (day: number) => {
-    if (day !== 0) {
-      setSelectedDate(
-        new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
-      );
-    }
+  const handleDayClick = (day: {
+    day: number;
+    currentMonth: boolean;
+    date: Date;
+  }) => {
+    setSelectedDate(day.date);
   };
 
-  // Days of the week labels
-  const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  // Add new event
+  const addEvent = () => {
+    if (!selectedDate || !newEventTitle.trim()) return;
 
-  // Get calendar days
-  const calendarDays = getDaysInMonth(currentDate);
+    const dateKey = formatDateKey(selectedDate);
+    const newEvent = {
+      title: newEventTitle,
+      time: newEventTime || undefined,
+    };
 
-  // Widget view (compact calendar)
-  if (isWidget) {
-    return (
-      <div className="calendar-widget">
-        <div className="widget-header">
-          <div className="current-date">
-            {new Date().toLocaleDateString("en-US", {
-              weekday: "short",
-              month: "short",
-              day: "numeric",
-            })}
-          </div>
-        </div>
+    setEvents((prev) => ({
+      ...prev,
+      [dateKey]: [...(prev[dateKey] || []), newEvent],
+    }));
 
-        <div className="mini-calendar">
-          <div className="mini-calendar-header">
-            {weekDays.map((day, index) => (
-              <div key={index} className="day-label">
-                {day.charAt(0)}
-              </div>
-            ))}
-          </div>
+    setNewEventTitle("");
+    setNewEventTime("");
+    setShowAddEvent(false);
 
-          <div className="mini-calendar-days">
-            {calendarDays.map((day, index) => (
-              <div
-                key={index}
-                className={`mini-day ${
-                  !day.isCurrentMonth ? "non-month-day" : ""
-                } 
-                            ${isToday(day.day) ? "today" : ""}
-                            ${
-                              getEventsForDate(day.day).length > 0
-                                ? "has-event"
-                                : ""
-                            }`}
-              >
-                {day.day !== 0 ? day.day : ""}
-              </div>
-            ))}
-          </div>
-        </div>
+    addNotification({
+      title: "Calendar",
+      message: `Added event: ${newEventTitle}`,
+      type: "success",
+    });
+  };
 
-        <div className="upcoming-events">
-          <h4>Upcoming</h4>
-          {events.length > 0 ? (
-            events
-              .filter((event) => event.date >= new Date())
-              .sort((a, b) => a.date.getTime() - b.date.getTime())
-              .slice(0, 2)
-              .map((event) => (
-                <div key={event.id} className="widget-event">
-                  <div className="event-time">{event.time}</div>
-                  <div className="event-title">{event.title}</div>
-                </div>
-              ))
-          ) : (
-            <p className="no-events">No upcoming events</p>
-          )}
-        </div>
+  // Delete event
+  const deleteEvent = (dateKey: string, index: number) => {
+    setEvents((prev) => {
+      const updatedEvents = { ...prev };
+      updatedEvents[dateKey] = updatedEvents[dateKey].filter(
+        (_, i) => i !== index
+      );
 
-        <style jsx>{`
-          .calendar-widget {
-            display: flex;
-            flex-direction: column;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 15px;
-            color: white;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            height: 100%;
-            width: 100%;
-          }
+      if (updatedEvents[dateKey].length === 0) {
+        delete updatedEvents[dateKey];
+      }
 
-          .widget-header {
-            text-align: center;
-            margin-bottom: 10px;
-          }
+      return updatedEvents;
+    });
 
-          .current-date {
-            font-size: 16px;
-            font-weight: 600;
-          }
+    addNotification({
+      title: "Calendar",
+      message: "Event deleted",
+      type: "info",
+    });
+  };
 
-          .mini-calendar {
-            margin-bottom: 15px;
-          }
+  // Calendar days array
+  const calendarDays = generateCalendarDays();
 
-          .mini-calendar-header {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            margin-bottom: 5px;
-          }
+  // Get events for selected date
+  const selectedDateKey = selectedDate ? formatDateKey(selectedDate) : "";
+  const selectedDateEvents = selectedDateKey
+    ? events[selectedDateKey] || []
+    : [];
 
-          .day-label {
-            text-align: center;
-            font-size: 11px;
-            font-weight: 500;
-            opacity: 0.7;
-          }
+  // Get current month name and year
+  const monthName = currentDate.toLocaleString("default", { month: "long" });
+  const year = currentDate.getFullYear();
 
-          .mini-calendar-days {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 2px;
-          }
-
-          .mini-day {
-            aspect-ratio: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            border-radius: 50%;
-            cursor: pointer;
-          }
-
-          .non-month-day {
-            opacity: 0.3;
-          }
-
-          .today {
-            background-color: rgba(0, 120, 212, 0.9);
-            color: white;
-            font-weight: 600;
-          }
-
-          .has-event {
-            position: relative;
-          }
-
-          .has-event:after {
-            content: "";
-            position: absolute;
-            bottom: 2px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 4px;
-            height: 4px;
-            border-radius: 50%;
-            background-color: #0078d4;
-          }
-
-          .upcoming-events {
-            flex: 1;
-          }
-
-          .upcoming-events h4 {
-            font-size: 14px;
-            margin-bottom: 8px;
-            font-weight: 600;
-          }
-
-          .widget-event {
-            padding: 6px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-          }
-
-          .event-time {
-            font-size: 11px;
-            opacity: 0.7;
-          }
-
-          .event-title {
-            font-size: 13px;
-            font-weight: 500;
-          }
-
-          .no-events {
-            font-size: 12px;
-            opacity: 0.7;
-            font-style: italic;
-          }
-        `}</style>
-      </div>
-    );
-  }
-
-  // Full app view
   return (
-    <div className="calendar-container">
+    <div className="calendar-app">
       <div className="calendar-header">
-        <h1>Calendar</h1>
-        <div className="calendar-nav">
-          <button onClick={goToPreviousMonth} className="nav-btn">
-            &lt;
-          </button>
-          <div className="current-month">{formatDate(currentDate)}</div>
-          <button onClick={goToNextMonth} className="nav-btn">
-            &gt;
-          </button>
+        <div className="calendar-controls">
+          <button onClick={goToPrevMonth}>◀</button>
+          <h2>
+            {monthName} {year}
+          </h2>
+          <button onClick={goToNextMonth}>▶</button>
         </div>
+        <button className="today-button" onClick={goToToday}>
+          Today
+        </button>
       </div>
 
       <div className="calendar-grid">
-        <div className="days-header">
-          {weekDays.map((day, index) => (
-            <div key={index} className="day-name">
-              {day}
-            </div>
-          ))}
-        </div>
+        {/* Day of week headers */}
+        <div className="calendar-weekday">Sun</div>
+        <div className="calendar-weekday">Mon</div>
+        <div className="calendar-weekday">Tue</div>
+        <div className="calendar-weekday">Wed</div>
+        <div className="calendar-weekday">Thu</div>
+        <div className="calendar-weekday">Fri</div>
+        <div className="calendar-weekday">Sat</div>
 
-        <div className="days-grid">
-          {calendarDays.map((day, index) => (
+        {/* Calendar days */}
+        {calendarDays.map((day, index) => {
+          const dateKey = formatDateKey(day.date);
+          const hasEvents = events[dateKey] && events[dateKey].length > 0;
+          const isToday = new Date().toDateString() === day.date.toDateString();
+          const isSelected =
+            selectedDate &&
+            selectedDate.toDateString() === day.date.toDateString();
+
+          return (
             <div
               key={index}
-              className={`day-cell ${
-                !day.isCurrentMonth ? "non-month-day" : ""
-              } 
-                          ${isToday(day.day) ? "today" : ""}
-                          ${isSelected(day.day) ? "selected" : ""}`}
-              onClick={() => handleDayClick(day.day)}
+              className={`calendar-day ${
+                day.currentMonth ? "current-month" : "other-month"
+              } ${isToday ? "today" : ""} ${isSelected ? "selected" : ""}`}
+              onClick={() => handleDayClick(day)}
             >
-              {day.day !== 0 && (
-                <>
-                  <div className="day-number">{day.day}</div>
-                  <div className="day-events">
-                    {getEventsForDate(day.day)
-                      .slice(0, 3)
-                      .map((event, idx) => (
-                        <div
-                          key={idx}
-                          className={`event-dot ${
-                            event.isCompleted ? "completed" : ""
-                          }`}
-                          title={event.title}
-                        ></div>
-                      ))}
-                  </div>
-                </>
-              )}
+              <div className="day-number">{day.day}</div>
+              {hasEvents && <div className="event-indicator"></div>}
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
-      <div className="events-panel">
-        <h2 className="events-date">
-          {selectedDate.toLocaleDateString("en-US", {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-            year: "numeric",
-          })}
-        </h2>
+      <div className="calendar-detail">
+        {selectedDate && (
+          <div className="selected-date-info">
+            <h3>
+              {selectedDate.toLocaleDateString(undefined, {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </h3>
 
-        <div className="events-list">
-          {getEventsForDate(selectedDate.getDate()).length > 0 ? (
-            getEventsForDate(selectedDate.getDate()).map((event) => (
-              <div key={event.id} className="event-item">
-                <div className="event-marker"></div>
-                <div className="event-content">
-                  <div className="event-time">{event.time}</div>
-                  <div className="event-title">{event.title}</div>
-                </div>
-                <div className="event-actions">
-                  <button className="event-action-btn">⋯</button>
+            {/* Event list */}
+            <div className="events-list">
+              {selectedDateEvents.length > 0 ? (
+                selectedDateEvents.map((event, index) => (
+                  <div key={index} className="event-item">
+                    <div className="event-content">
+                      <div className="event-title">{event.title}</div>
+                      {event.time && (
+                        <div className="event-time">{event.time}</div>
+                      )}
+                    </div>
+                    <button
+                      className="delete-event"
+                      onClick={() => deleteEvent(selectedDateKey, index)}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="no-events">No events for this day</div>
+              )}
+            </div>
+
+            {/* Add event button/form */}
+            {!showAddEvent ? (
+              <button
+                className="add-event-button"
+                onClick={() => setShowAddEvent(true)}
+              >
+                + Add Event
+              </button>
+            ) : (
+              <div className="add-event-form">
+                <input
+                  type="text"
+                  placeholder="Event title"
+                  value={newEventTitle}
+                  onChange={(e) => setNewEventTitle(e.target.value)}
+                />
+                <input
+                  type="time"
+                  value={newEventTime}
+                  onChange={(e) => setNewEventTime(e.target.value)}
+                />
+                <div className="form-actions">
+                  <button
+                    className="add-button"
+                    onClick={addEvent}
+                    disabled={!newEventTitle.trim()}
+                  >
+                    Add
+                  </button>
+                  <button
+                    className="cancel-button"
+                    onClick={() => setShowAddEvent(false)}
+                  >
+                    Cancel
+                  </button>
                 </div>
               </div>
-            ))
-          ) : (
-            <div className="no-events-message">
-              No events scheduled for this day
-            </div>
-          )}
-        </div>
-
-        <div className="add-event">
-          <button className="add-event-btn">
-            <span>+</span> Add event
-          </button>
-        </div>
+            )}
+          </div>
+        )}
       </div>
 
       <style jsx>{`
-        .calendar-container {
-          display: grid;
-          grid-template-rows: auto 1fr auto;
+        .calendar-app {
+          display: flex;
+          flex-direction: column;
           height: 100%;
           background-color: var(--bg-color);
           color: var(--text-color);
         }
 
         .calendar-header {
-          padding: 20px;
           display: flex;
           justify-content: space-between;
           align-items: center;
+          padding: 15px 20px;
           border-bottom: 1px solid var(--border-color);
         }
 
-        .calendar-header h1 {
-          font-size: 24px;
-          font-weight: 500;
-          margin: 0;
-        }
-
-        .calendar-nav {
+        .calendar-controls {
           display: flex;
           align-items: center;
-          gap: 15px;
+          gap: 16px;
         }
 
-        .current-month {
+        .calendar-controls h2 {
+          margin: 0;
           font-size: 18px;
           font-weight: 500;
         }
 
-        .nav-btn {
-          width: 30px;
-          height: 30px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background-color: var(--bg-secondary);
-          border-radius: 50%;
+        .calendar-controls button {
+          background: none;
+          border: none;
+          font-size: 16px;
           cursor: pointer;
-          font-weight: bold;
+          padding: 5px 10px;
+          border-radius: 4px;
         }
 
-        .nav-btn:hover {
+        .calendar-controls button:hover {
           background-color: var(--hover-bg);
+        }
+
+        .today-button {
+          padding: 6px 12px;
+          background-color: var(--accent-color);
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
         }
 
         .calendar-grid {
-          padding: 20px;
-        }
-
-        .days-header {
           display: grid;
           grid-template-columns: repeat(7, 1fr);
-          margin-bottom: 10px;
+          grid-template-rows: auto repeat(6, 1fr);
+          padding: 10px;
+          flex: 1;
+          min-height: 0;
+          overflow: auto;
         }
 
-        .day-name {
+        .calendar-weekday {
           text-align: center;
-          font-size: 14px;
           font-weight: 500;
-          padding: 10px 0;
+          padding: 10px;
+          font-size: 14px;
+          color: var(--text-secondary);
+          border-bottom: 1px solid var(--border-color);
         }
 
-        .days-grid {
-          display: grid;
-          grid-template-columns: repeat(7, 1fr);
-          grid-auto-rows: 1fr;
-          gap: 4px;
-        }
-
-        .day-cell {
-          border-radius: 5px;
-          padding: 8px;
-          min-height: 80px;
+        .calendar-day {
+          padding: 5px;
+          text-align: center;
           cursor: pointer;
+          position: relative;
+          height: 60px;
           display: flex;
           flex-direction: column;
+          align-items: center;
+          border: 1px solid transparent;
         }
 
-        .day-cell:hover {
+        .calendar-day:hover {
           background-color: var(--hover-bg);
         }
 
-        .non-month-day {
-          color: var(--text-color);
-          opacity: 0.3;
-        }
-
-        .today {
-          background-color: var(--bg-secondary);
-          border: 2px solid var(--accent-color);
-        }
-
-        .selected {
-          background-color: var(--selected-bg);
-        }
-
         .day-number {
-          font-weight: 500;
+          font-size: 14px;
           margin-bottom: 5px;
         }
 
-        .day-events {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 3px;
+        .other-month {
+          color: var(--text-muted);
         }
 
-        .event-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
+        .today {
+          font-weight: bold;
+          color: var(--accent-color);
+        }
+
+        .selected {
+          border: 2px solid var(--accent-color);
+          border-radius: 4px;
+        }
+
+        .event-indicator {
+          width: 6px;
+          height: 6px;
           background-color: var(--accent-color);
+          border-radius: 50%;
+          margin-top: 2px;
         }
 
-        .event-dot.completed {
-          background-color: #107c10;
-        }
-
-        .events-panel {
-          padding: 20px;
-          background-color: var(--bg-secondary);
+        .calendar-detail {
           border-top: 1px solid var(--border-color);
+          padding: 15px;
+          height: 200px;
+          overflow-y: auto;
         }
 
-        .events-date {
-          margin: 0 0 15px 0;
-          font-size: 18px;
+        .selected-date-info h3 {
+          margin-top: 0;
+          margin-bottom: 15px;
+          font-size: 16px;
           font-weight: 500;
         }
 
         .events-list {
-          margin-bottom: 20px;
+          margin-bottom: 15px;
         }
 
         .event-item {
           display: flex;
+          justify-content: space-between;
           align-items: center;
-          padding: 10px;
-          border-radius: 5px;
-          margin-bottom: 5px;
-        }
-
-        .event-item:hover {
-          background-color: var(--hover-bg);
-        }
-
-        .event-marker {
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-          background-color: var(--accent-color);
-          margin-right: 10px;
+          padding: 8px 12px;
+          background-color: var(--bg-secondary);
+          border-radius: 4px;
+          margin-bottom: 8px;
         }
 
         .event-content {
           flex: 1;
         }
 
-        .event-time {
-          font-size: 12px;
-          opacity: 0.7;
-        }
-
         .event-title {
           font-weight: 500;
         }
 
-        .event-actions {
-          opacity: 0;
-          transition: opacity 0.2s;
+        .event-time {
+          font-size: 12px;
+          color: var(--text-secondary);
+          margin-top: 4px;
         }
 
-        .event-item:hover .event-actions {
-          opacity: 1;
-        }
-
-        .event-action-btn {
-          padding: 5px;
+        .delete-event {
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: var(--text-muted);
+          font-size: 12px;
+          padding: 2px 6px;
           border-radius: 4px;
         }
 
-        .event-action-btn:hover {
+        .delete-event:hover {
+          background-color: var(--hover-bg);
+          color: var(--text-color);
+        }
+
+        .no-events {
+          color: var(--text-muted);
+          font-style: italic;
+          text-align: center;
+          padding: 10px;
+        }
+
+        .add-event-button {
+          width: 100%;
+          padding: 8px;
+          background-color: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 14px;
+          text-align: left;
+        }
+
+        .add-event-button:hover {
           background-color: var(--hover-bg);
         }
 
-        .no-events-message {
-          padding: 20px;
-          text-align: center;
+        .add-event-form {
+          margin-top: 10px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .add-event-form input {
+          padding: 8px;
+          border-radius: 4px;
+          border: 1px solid var(--border-color);
+          background-color: var(--input-bg);
           color: var(--text-color);
-          opacity: 0.7;
-          font-style: italic;
         }
 
-        .add-event {
+        .form-actions {
           display: flex;
-          justify-content: center;
+          gap: 8px;
         }
 
-        .add-event-btn {
-          display: flex;
-          align-items: center;
-          gap: 5px;
-          padding: 10px 20px;
+        .form-actions button {
+          flex: 1;
+          padding: 8px;
+          border-radius: 4px;
+          border: 1px solid var(--border-color);
+          cursor: pointer;
+        }
+
+        .add-button {
           background-color: var(--accent-color);
           color: white;
-          border-radius: 20px;
-          font-weight: 500;
+          border-color: var(--accent-color) !important;
         }
 
-        .add-event-btn:hover {
-          opacity: 0.9;
+        .add-button:disabled {
+          opacity: 0.6;
+          cursor: default;
         }
 
-        :global([data-theme="dark"]) {
-          --event-bg: rgba(0, 120, 212, 0.2);
+        .cancel-button {
+          background-color: var(--bg-secondary);
         }
 
-        :global([data-theme="light"]) {
-          --event-bg: rgba(0, 120, 212, 0.1);
+        :global([data-theme="dark"]) .calendar-app {
+          --bg-secondary: #333;
+          --border-color: rgba(255, 255, 255, 0.1);
+          --hover-bg: rgba(255, 255, 255, 0.05);
+          --text-secondary: #aaa;
+          --text-muted: #777;
+          --accent-color: #0078d4;
+          --input-bg: #444;
+        }
+
+        :global([data-theme="light"]) .calendar-app {
+          --bg-secondary: #f5f5f5;
+          --border-color: rgba(0, 0, 0, 0.1);
+          --hover-bg: rgba(0, 0, 0, 0.03);
+          --text-secondary: #666;
+          --text-muted: #999;
+          --accent-color: #0078d4;
+          --input-bg: white;
         }
       `}</style>
     </div>
