@@ -1,26 +1,863 @@
-@import "tailwindcss";
+/* Import component styles */
+@import "./components.css";
 
+/* Windows 11 Theme Variables */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Light Theme Colors */
+  --bg-color-light: #f9f9f9;
+  --bg-secondary-light: #f0f0f0;
+  --text-color-light: #202020;
+  --border-color-light: rgba(0, 0, 0, 0.1);
+  --accent-color-light: #0078d4;
+  --hover-bg-light: rgba(0, 0, 0, 0.04);
+  --active-bg-light: rgba(0, 0, 0, 0.08);
+  --selected-bg-light: rgba(0, 120, 212, 0.2);
+  --taskbar-bg-light: rgba(240, 240, 240, 0.85);
+  --window-bg-light: white;
+  --window-header-light: #f3f3f3;
+  --shadow-light: 0 2px 12px rgba(0, 0, 0, 0.1);
+  --warning-color-light: #d83b01;
+
+  /* Dark Theme Colors */
+  --bg-color-dark: #202020;
+  --bg-secondary-dark: #252525;
+  --text-color-dark: #e0e0e0;
+  --border-color-dark: rgba(255, 255, 255, 0.1);
+  --accent-color-dark: #0078d4;
+  --hover-bg-dark: rgba(255, 255, 255, 0.05);
+  --active-bg-dark: rgba(255, 255, 255, 0.1);
+  --selected-bg-dark: rgba(0, 120, 212, 0.4);
+  --taskbar-bg-dark: rgba(20, 20, 20, 0.8);
+  --window-bg-dark: #2c2c2c;
+  --window-header-dark: #1f1f1f;
+  --shadow-dark: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --warning-color-dark: #f25022;
+
+  /* Animation Timing */
+  --transition-short: 0.15s;
+  --transition-medium: 0.3s;
+
+  /* Default values - will be overridden by theme */
+  --bg-color: var(--bg-color-light);
+  --bg-secondary: var(--bg-secondary-light);
+  --text-color: var(--text-color-light);
+  --border-color: var(--border-color-light);
+  --accent-color: var(--accent-color-light);
+  --hover-bg: var(--hover-bg-light);
+  --active-bg: var(--active-bg-light);
+  --selected-bg: var(--selected-bg-light);
+  --taskbar-bg: var(--taskbar-bg-light);
+  --window-bg: var(--window-bg-light);
+  --window-header: var(--window-header-light);
+  --shadow: var(--shadow-light);
+  --warning-color: var(--warning-color-light);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Theme Application */
+[data-theme="light"] {
+  --bg-color: var(--bg-color-light);
+  --bg-secondary: var(--bg-secondary-light);
+  --text-color: var(--text-color-light);
+  --border-color: var(--border-color-light);
+  --accent-color: var(--accent-color-light);
+  --hover-bg: var(--hover-bg-light);
+  --active-bg: var(--active-bg-light);
+  --selected-bg: var(--selected-bg-light);
+  --taskbar-bg: var(--taskbar-bg-light);
+  --window-bg: var(--window-bg-light);
+  --window-header: var(--window-header-light);
+  --shadow: var(--shadow-light);
+  --warning-color: var(--warning-color-light);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+[data-theme="dark"] {
+  --bg-color: var(--bg-color-dark);
+  --bg-secondary: var(--bg-secondary-dark);
+  --text-color: var(--text-color-dark);
+  --border-color: var(--border-color-dark);
+  --accent-color: var(--accent-color-dark);
+  --hover-bg: var(--hover-bg-dark);
+  --active-bg: var(--active-bg-dark);
+  --selected-bg: var(--selected-bg-dark);
+  --taskbar-bg: var(--taskbar-bg-dark);
+  --window-bg: var(--window-bg-dark);
+  --window-header: var(--window-header-dark);
+  --shadow: var(--shadow-dark);
+  --warning-color: var(--warning-color-dark);
+}
+
+/* Base Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  position: relative;
+}
+
+/* Remove default button styling */
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+button:focus {
+  outline: none;
+}
+
+/* Window Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.scale-in {
+  animation: scaleIn 0.2s ease-out;
+}
+
+.slide-in {
+  animation: slideInFromBottom 0.2s ease-out;
+}
+
+/* Layout Utilities */
+.relative {
+  position: relative;
+}
+.absolute {
+  position: absolute;
+}
+.fixed {
+  position: fixed;
+}
+.inset-0 {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+.top-0 {
+  top: 0;
+}
+.right-0 {
+  right: 0;
+}
+.bottom-0 {
+  bottom: 0;
+}
+.left-0 {
+  left: 0;
+}
+.top-4 {
+  top: 1rem;
+}
+.left-4 {
+  left: 1rem;
+}
+.right-4 {
+  right: 1rem;
+}
+.bottom-16 {
+  bottom: 4rem;
+}
+.z-0 {
+  z-index: 0;
+}
+.z-10 {
+  z-index: 10;
+}
+.z-20 {
+  z-index: 20;
+}
+.z-50 {
+  z-index: 50;
+}
+
+/* Flexbox */
+.flex {
+  display: flex;
+}
+.flex-col {
+  flex-direction: column;
+}
+.items-center {
+  align-items: center;
+}
+.justify-center {
+  justify-content: center;
+}
+.justify-between {
+  justify-content: space-between;
+}
+.flex-1 {
+  flex: 1 1 0%;
+}
+.flex-wrap {
+  flex-wrap: wrap;
+}
+.gap-1 {
+  gap: 0.25rem;
+}
+.gap-2 {
+  gap: 0.5rem;
+}
+.gap-3 {
+  gap: 0.75rem;
+}
+.gap-4 {
+  gap: 1rem;
+}
+
+/* Grid */
+.grid {
+  display: grid;
+}
+.grid-cols-auto-fill {
+  grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr));
+}
+.content-start {
+  align-content: start;
+}
+
+/* Sizing */
+.w-full {
+  width: 100%;
+}
+.h-screen {
+  height: 100vh;
+}
+.h-12 {
+  height: 3rem;
+}
+.w-96 {
+  width: 24rem;
+}
+.max-h-80vh {
+  max-height: 80vh;
+}
+.w-60 {
+  width: 15rem;
+}
+
+/* Spacing */
+.p-0 {
+  padding: 0;
+}
+.p-1 {
+  padding: 0.25rem;
+}
+.p-2 {
+  padding: 0.5rem;
+}
+.p-3 {
+  padding: 0.75rem;
+}
+.p-4 {
+  padding: 1rem;
+}
+.px-1 {
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+.px-2 {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+.px-3 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+.px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+.py-1 {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+.py-2 {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+.m-0 {
+  margin: 0;
+}
+.m-1 {
+  margin: 0.25rem;
+}
+.m-2 {
+  margin: 0.5rem;
+}
+.my-2 {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.mb-1 {
+  margin-bottom: 0.25rem;
+}
+.mb-2 {
+  margin-bottom: 0.5rem;
+}
+.mb-4 {
+  margin-bottom: 1rem;
+}
+.mb-8 {
+  margin-bottom: 2rem;
+}
+
+/* Borders */
+.border {
+  border-width: 1px;
+  border-style: solid;
+}
+.border-0 {
+  border-width: 0;
+}
+.border-t {
+  border-top-width: 1px;
+  border-top-style: solid;
+}
+.border-b {
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+}
+.border-gray-200 {
+  border-color: #e5e7eb;
+}
+.border-gray-700 {
+  border-color: #374151;
+}
+.rounded-lg {
+  border-radius: 0.5rem;
+}
+.rounded-full {
+  border-radius: 9999px;
+}
+
+/* Colors */
+.bg-white {
+  background-color: #ffffff;
+}
+.bg-black {
+  background-color: #000000;
+}
+.bg-gray-100 {
+  background-color: #f3f4f6;
+}
+.bg-gray-800 {
+  background-color: #1f2937;
+}
+.text-white {
+  color: #ffffff;
+}
+.text-gray-800 {
+  color: #1f2937;
+}
+.hover\:bg-gray-100:hover {
+  background-color: #f3f4f6;
+}
+.hover\:bg-gray-700:hover {
+  background-color: #374151;
+}
+
+/* Typography */
+.text-xs {
+  font-size: 0.75rem;
+}
+.text-sm {
+  font-size: 0.875rem;
+}
+.text-base {
+  font-size: 1rem;
+}
+.text-lg {
+  font-size: 1.125rem;
+}
+.text-xl {
+  font-size: 1.25rem;
+}
+.font-medium {
+  font-weight: 500;
+}
+.font-semibold {
+  font-weight: 600;
+}
+.font-bold {
+  font-weight: 700;
+}
+.text-center {
+  text-align: center;
+}
+.whitespace-nowrap {
+  white-space: nowrap;
+}
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Effects */
+.shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+.shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+.overflow-hidden {
+  overflow: hidden;
+}
+.overflow-y-auto {
+  overflow-y: auto;
+}
+.overflow-x-hidden {
+  overflow-x: hidden;
+}
+.backdrop-blur-lg {
+  backdrop-filter: blur(16px);
+}
+.backdrop-blur-xl {
+  backdrop-filter: blur(24px);
+}
+.backdrop-blur-2xl {
+  backdrop-filter: blur(40px);
+}
+.opacity-0 {
+  opacity: 0;
+}
+.opacity-50 {
+  opacity: 0.5;
+}
+.opacity-70 {
+  opacity: 0.7;
+}
+.opacity-100 {
+  opacity: 1;
+}
+
+/* Interactions */
+.cursor-pointer {
+  cursor: pointer;
+}
+.select-none {
+  user-select: none;
+}
+
+/* Backgrounds with alpha */
+.bg-white\/80 {
+  background-color: rgba(255, 255, 255, 0.8);
+}
+.bg-white\/90 {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+.bg-black\/60 {
+  background-color: rgba(0, 0, 0, 0.6);
+}
+.bg-gray-800\/80 {
+  background-color: rgba(31, 41, 55, 0.8);
+}
+.bg-gray-800\/90 {
+  background-color: rgba(31, 41, 55, 0.9);
+}
+
+/* Dark mode utilities */
+.dark-mode .dark\:bg-gray-800 {
+  background-color: #1f2937;
+}
+.dark-mode .dark\:bg-gray-700 {
+  background-color: #374151;
+}
+.dark-mode .dark\:text-white {
+  color: #ffffff;
+}
+.dark-mode .dark\:border-gray-700 {
+  border-color: #374151;
+}
+.dark-mode .dark\:hover\:bg-gray-700:hover {
+  background-color: #374151;
+}
+
+/* Component-specific styles */
+.desktop-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.wallpaper {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+}
+
+.desktop-icons {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  right: 1rem;
+  bottom: 4rem;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr));
+  gap: 1rem;
+  align-content: start;
+}
+
+.taskbar {
+  height: 3rem;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(40px);
+  display: flex;
+  align-items: center;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.start-menu {
+  position: absolute;
+  bottom: 3rem;
+  left: 0;
+  width: 24rem;
+  max-height: 80vh;
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(24px);
+  border-radius: 0.5rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  z-index: 50;
+}
+
+.dark-mode .start-menu {
+  background-color: rgba(31, 41, 55, 0.9);
+}
+
+.notification-center {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 24rem;
+  height: 100vh;
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
+}
+
+.dark-mode .notification-center {
+  background-color: rgba(31, 41, 55, 0.8);
+}
+
+.context-menu {
+  position: absolute;
+  background-color: #ffffff;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  z-index: 50;
+  overflow: hidden;
+  width: 15rem;
+}
+
+.dark-mode .context-menu {
+  background-color: #1f2937;
+  border-color: #374151;
+}
+
+.context-menu-item {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.context-menu-item:hover {
+  background-color: #f3f4f6;
+}
+
+.dark-mode .context-menu-item:hover {
+  background-color: #374151;
+}
+
+/* Window styles */
+.window {
+  position: absolute;
+  background-color: var(--window-bg);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-color);
+}
+
+.window-header {
+  height: 2.5rem;
+  background-color: var(--window-header);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 0.75rem;
+  padding-right: 0.5rem;
+  user-select: none;
+}
+
+.window-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.window-controls {
+  display: flex;
+  align-items: center;
+}
+
+.window-control-button {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  margin-left: 0.25rem;
+}
+
+.window-control-button:hover {
+  background-color: var(--hover-bg);
+}
+
+.window-content {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.window-resize-handle {
+  position: absolute;
+  z-index: 2;
+}
+
+.window-resize-handle-n {
+  top: -0.25rem;
+  left: 0;
+  right: 0;
+  height: 0.5rem;
+  cursor: ns-resize;
+}
+
+.window-resize-handle-e {
+  top: 0;
+  right: -0.25rem;
+  bottom: 0;
+  width: 0.5rem;
+  cursor: ew-resize;
+}
+
+.window-resize-handle-s {
+  bottom: -0.25rem;
+  left: 0;
+  right: 0;
+  height: 0.5rem;
+  cursor: ns-resize;
+}
+
+.window-resize-handle-w {
+  top: 0;
+  left: -0.25rem;
+  bottom: 0;
+  width: 0.5rem;
+  cursor: ew-resize;
+}
+
+.window-resize-handle-ne {
+  top: -0.25rem;
+  right: -0.25rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  cursor: nesw-resize;
+}
+
+.window-resize-handle-se {
+  bottom: -0.25rem;
+  right: -0.25rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  cursor: nwse-resize;
+}
+
+.window-resize-handle-sw {
+  bottom: -0.25rem;
+  left: -0.25rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  cursor: nesw-resize;
+}
+
+.window-resize-handle-nw {
+  top: -0.25rem;
+  left: -0.25rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  cursor: nwse-resize;
+}
+
+/* App-specific styles */
+.calculator-app {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.calculator-display {
+  background-color: var(--bg-secondary);
+  padding: 1rem;
+  text-align: right;
+  font-size: 2rem;
+  font-weight: 500;
+  height: 4rem;
+  overflow: hidden;
+}
+
+.calculator-buttons {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+}
+
+.calculator-button {
+  background-color: var(--bg-secondary);
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.calculator-button:hover {
+  background-color: var(--hover-bg);
+}
+
+.calculator-button:active {
+  background-color: var(--active-bg);
+}
+
+.calculator-operator {
+  background-color: var(--accent-color);
+  color: white;
+}
+
+.calculator-operator:hover {
+  background-color: rgba(0, 120, 212, 0.9);
+}
+
+.notepad-app {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.notepad-toolbar {
+  display: flex;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.notepad-textarea {
+  flex: 1;
+  border: none;
+  resize: none;
+  padding: 1rem;
+  font-family: var(--font-geist-mono), monospace;
+  background-color: var(--window-bg);
+  color: var(--text-color);
+}
+
+.notepad-textarea:focus {
+  outline: none;
+}
+
+/* Add this at the end of your globals.css file */
+
+/* Z-index hierarchy for components */
+.taskbar-position {
+  z-index: 100 !important;
+  pointer-events: auto !important;
+}
+
+.context-menu {
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+}
+
+.desktop-icons {
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.desktop-icons .desktop-icon {
+  pointer-events: auto;
 }

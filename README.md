@@ -1,14 +1,33 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Windows 11 Web Simulator
+
+A web-based Windows 11 desktop environment simulator built with React and TypeScript. This project recreates the Windows 11 user interface with a functional taskbar, start menu, window management system, and several built-in applications.
+
+![Windows 11 Web Simulator](./public/screenshots/desktop.png)
+
+## Features
+
+- **Windows 11 UI**: Authentic Windows 11 design language and interactions
+- **Window Management**: Draggable, resizable windows with minimize/maximize/close controls
+- **Taskbar**: Windows 11-style taskbar with start menu, pinned apps, and system tray
+- **Start Menu**: App launcher with search, pinned, and recent applications
+- **Dark/Light Themes**: Full support for both themes with automatic system preference detection
+- **Built-in Applications**:
+  - Calculator
+  - Notepad
+  - File Explorer
+  - Terminal/Command Line
+  - Settings
+  - Weather
+  - Calendar
 
 ## Getting Started
 
-First, run the development server:
+First, install the dependencies:
 
 ```bash
-npm run dev
+npm install
 # or
-yarn dev
-# or
+yarn install
 pnpm dev
 # or
 bun dev
