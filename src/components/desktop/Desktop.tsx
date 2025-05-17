@@ -9,6 +9,7 @@ import NotificationCenter from "@/components/system/NotificationCenter";
 import WidgetPanel from "@/components/system/WidgetPanel";
 import ContextMenu from "@/components/desktop/ContextMenu";
 import DesktopIcons from "./DesktopIcons";
+import SearchPanel from "@/components/system/SearchPanel";
 
 interface DesktopProps {
   className?: string;
@@ -20,6 +21,7 @@ export default function Desktop({ className }: DesktopProps) {
     isStartMenuOpen,
     isNotificationCenterOpen,
     isWidgetPanelOpen,
+    isSearchPanelOpen,
   } = useOS();
 
   const [contextMenu, setContextMenu] = useState<{
@@ -153,6 +155,7 @@ export default function Desktop({ className }: DesktopProps) {
       {isStartMenuOpen && <StartMenu />}
       {isNotificationCenterOpen && <NotificationCenter />}
       {isWidgetPanelOpen && <WidgetPanel />}
+      {isSearchPanelOpen && <SearchPanel />}
       {/* Taskbar - Keep separate from desktop event handling */}
       <div className="taskbar-container">
         <Taskbar className="taskbar-position" />

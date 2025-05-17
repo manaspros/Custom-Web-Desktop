@@ -40,6 +40,7 @@ type OSContextType = {
   isStartMenuOpen: boolean;
   isNotificationCenterOpen: boolean;
   isWidgetPanelOpen: boolean;
+  isSearchPanelOpen: boolean;
   apps: AppType[];
   openWindows: WindowState[];
   notifications: any[];
@@ -62,6 +63,7 @@ type OSContextType = {
   toggleStartMenu: () => void;
   toggleNotificationCenter: () => void;
   toggleWidgetPanel: () => void;
+  toggleSearchPanel: () => void;
   changeWallpaper: (url: string) => void;
   addNotification: (notification: any) => void;
   dismissNotification: (id: string) => void;
@@ -79,6 +81,7 @@ export const OSContext = createContext<OSContextType>({
   isStartMenuOpen: false,
   isNotificationCenterOpen: false,
   isWidgetPanelOpen: false,
+  isSearchPanelOpen: false,
   apps: [],
   openWindows: [],
   notifications: [],
@@ -95,6 +98,7 @@ export const OSContext = createContext<OSContextType>({
   toggleStartMenu: () => {},
   toggleNotificationCenter: () => {},
   toggleWidgetPanel: () => {},
+  toggleSearchPanel: () => {},
   changeWallpaper: () => {},
   addNotification: () => {},
   dismissNotification: () => {},
@@ -120,6 +124,7 @@ export const OSProvider: React.FC<{
   const [isNotificationCenterOpen, setIsNotificationCenterOpen] =
     useState(false);
   const [isWidgetPanelOpen, setIsWidgetPanelOpen] = useState(false);
+  const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
   const [wallpaper, setWallpaper] = useState("/wallpapers/default.jpg");
   const [highestZIndex, setHighestZIndex] = useState(0);
 
@@ -285,18 +290,28 @@ export const OSProvider: React.FC<{
     setIsStartMenuOpen((prev) => !prev);
     if (isNotificationCenterOpen) setIsNotificationCenterOpen(false);
     if (isWidgetPanelOpen) setIsWidgetPanelOpen(false);
+    if (isSearchPanelOpen) setIsSearchPanelOpen(false);
   };
 
   const toggleNotificationCenter = () => {
     setIsNotificationCenterOpen((prev) => !prev);
     if (isStartMenuOpen) setIsStartMenuOpen(false);
     if (isWidgetPanelOpen) setIsWidgetPanelOpen(false);
+    if (isSearchPanelOpen) setIsSearchPanelOpen(false);
   };
 
   const toggleWidgetPanel = () => {
     setIsWidgetPanelOpen((prev) => !prev);
     if (isStartMenuOpen) setIsStartMenuOpen(false);
     if (isNotificationCenterOpen) setIsNotificationCenterOpen(false);
+    if (isSearchPanelOpen) setIsSearchPanelOpen(false);
+  };
+
+  const toggleSearchPanel = () => {
+    setIsSearchPanelOpen((prev) => !prev);
+    if (isStartMenuOpen) setIsStartMenuOpen(false);
+    if (isNotificationCenterOpen) setIsNotificationCenterOpen(false);
+    if (isWidgetPanelOpen) setIsWidgetPanelOpen(false);
   };
 
   // Wallpaper change
@@ -442,6 +457,7 @@ export const OSProvider: React.FC<{
     isStartMenuOpen,
     isNotificationCenterOpen,
     isWidgetPanelOpen,
+    isSearchPanelOpen,
     apps,
     openWindows,
     notifications,
@@ -458,6 +474,7 @@ export const OSProvider: React.FC<{
     toggleStartMenu,
     toggleNotificationCenter,
     toggleWidgetPanel,
+    toggleSearchPanel,
     changeWallpaper,
     addNotification,
     dismissNotification,

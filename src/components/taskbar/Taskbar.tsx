@@ -13,6 +13,8 @@ export default function Taskbar({ className = "" }: TaskbarProps) {
     isNotificationCenterOpen,
     toggleWidgetPanel,
     isWidgetPanelOpen,
+    toggleSearchPanel,
+    isSearchPanelOpen,
     apps,
     openWindows,
     pinnedApps,
@@ -82,9 +84,16 @@ export default function Taskbar({ className = "" }: TaskbarProps) {
             <path d="M21 13H13V21H21V13Z" fill="white" />
           </svg>
         </span>
-      </button>{" "}
-      {/* Taskbar Search */}
-      <div className="taskbar-search">🔍 Search</div>
+      </button>
+
+      {/* Taskbar Search - Updated to be clickable */}
+      <button
+        className={`taskbar-search ${isSearchPanelOpen ? "active" : ""}`}
+        onClick={toggleSearchPanel}
+      >
+        🔍 Search
+      </button>
+
       {/* Pinned/Open Apps */}
       <div className="taskbar-apps">
         {taskbarAppIds.map((appId) => {
@@ -189,6 +198,27 @@ export default function Taskbar({ className = "" }: TaskbarProps) {
           padding: 0 12px;
           z-index: 100;
           pointer-events: auto;
+        }
+
+        .taskbar-search {
+          margin: 0 8px;
+          background-color: rgba(255, 255, 255, 0.1);
+          border-radius: 4px;
+          padding: 4px 12px;
+          color: white;
+          font-size: 14px;
+          border: none;
+          cursor: pointer;
+          transition: background-color 0.2s;
+        }
+
+        .taskbar-search:hover {
+          background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .taskbar-search.active {
+          background-color: rgba(255, 255, 255, 0.25);
+          box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3);
         }
 
         /* ...existing styles... */
