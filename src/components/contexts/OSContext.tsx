@@ -268,11 +268,13 @@ export const OSProvider: React.FC<{
     sortDirection: "asc",
   });
 
-  // Clipboard state for cut/copy/paste operations
-  const [clipboard, setClipboard] = useState<any | null>(null);
+  // Clipboard state for cut/copy/paste operations - replace 'any' with proper type
+  const [clipboard, setClipboard] = useState<ClipboardData | null>(null);
 
-  // Deleted apps tracking (for undo functionality)
-  const [_deletedApps, setDeletedApps] = useState<AppType[]>([]);
+  // Deleted apps tracking (for potential undo functionality)
+  // Using eslint-disable to acknowledge this is intentionally unused for now
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [deletedApps, setDeletedApps] = useState<AppType[]>([]);
 
   // File System state
   const [fileSystem, setFileSystem] = useState<FileSystemItem[]>([]);
@@ -324,7 +326,11 @@ export const OSProvider: React.FC<{
       try {
         const parsedFs = JSON.parse(savedFileSystem);
         // Convert date strings back to Date objects
-        const restoredFs = parsedFs.map((item: any) => ({
+        // Use a specific type for the item parameter
+        const restoredFs = parsedFs.map((item: Omit<FileSystemItem, 'created' | 'modified'> & { 
+          created: string; 
+          modified: string 
+        }) => ({
           ...item,
           created: new Date(item.created),
           modified: new Date(item.modified),
