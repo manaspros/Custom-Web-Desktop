@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useOS } from "@/components/contexts/OSContext";
 
 interface SettingsSectionProps {
@@ -271,6 +271,7 @@ export default function Settings() {
     });
   };
 
+  // Fixed unused parameter
   const handleTimeFormatChange = (value: string) => {
     setTimeFormat(value);
   };

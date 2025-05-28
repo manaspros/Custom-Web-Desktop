@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useOS, FileSystemItem } from "@/components/contexts/OSContext";
 
 export default function FileExplorer() {
@@ -9,11 +9,9 @@ export default function FileExplorer() {
     fileSystem,
     getFilesInFolder,
     createFolder,
-    createFile,
     deleteFileSystemItem,
     getFileById,
     renameFileSystemItem,
-    moveFileSystemItem,
     launchApp,
   } = useOS();
 

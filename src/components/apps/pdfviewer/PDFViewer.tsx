@@ -7,7 +7,7 @@ interface PDFViewerProps {
   windowId?: string;
 }
 
-export default function PDFViewer({ windowId = "default" }: PDFViewerProps) {
+export default function PDFViewer({ windowId: _windowId = "default" }: PDFViewerProps) {
   const { getFileById, getFileContent, addNotification, fileSystem } = useOS();
 
   const [currentFileId, setCurrentFileId] = useState<string | null>(null);
@@ -38,13 +38,13 @@ export default function PDFViewer({ windowId = "default" }: PDFViewerProps) {
       // Log for debugging
       console.log("Opening PDF file:", fileToOpen);
     }
-  }, []);
+  }, [openPdfFile]); // Added missing dependency
 
-  // Update any hardcoded example URLs in the component
+  // Remove unused variables from this effect
   useEffect(() => {
     // Load default example if needed for testing
-    const examplePdfUrl = "/Manas_Choudhary_Resume.pdf"; // Changed from sample.pdf
-
+    // const examplePdfUrl = "/Manas_Choudhary_Resume.pdf"; 
+    
     // Rest of the effect logic
   }, []);
 

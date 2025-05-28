@@ -7,7 +7,7 @@ interface CalendarProps {
   windowId?: string;
 }
 
-export default function Calendar({ windowId = "default" }: CalendarProps) {
+export default function Calendar({ windowId: _windowId = "default" }: CalendarProps) {
   const { addNotification } = useOS();
 
   const [currentDate, setCurrentDate] = useState(new Date());

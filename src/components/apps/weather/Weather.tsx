@@ -5,7 +5,8 @@ import { useOS } from "@/components/contexts/OSContext";
 
 interface WeatherProps {
   isWidget?: boolean;
-  windowId?: string;
+  // Using _ prefix to indicate intentionally unused parameter
+  _windowId?: string;
 }
 
 interface WeatherData {
@@ -25,9 +26,9 @@ interface WeatherData {
 
 export default function Weather({
   isWidget = false,
-  windowId = "default",
+  _windowId = "default",
 }: WeatherProps) {
-  const { theme, addNotification } = useOS();
+  const { addNotification } = useOS();
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [location, setLocation] = useState<string>("Delhi");

@@ -63,6 +63,22 @@ export interface FileSystemItem {
   path: string;
 }
 
+// Define better types instead of 'any'
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type?: "info" | "success" | "warning" | "error";
+  timestamp: Date;
+  persistent?: boolean;
+  icon?: string;
+}
+
+interface ClipboardData {
+  type: "cut" | "copy";
+  app: AppType;
+}
+
 // Add to OSContextType
 type OSContextType = {
   theme: string;
@@ -74,7 +90,7 @@ type OSContextType = {
   isSearchPanelOpen: boolean;
   apps: AppType[];
   openWindows: WindowState[];
-  notifications: any[];
+  notifications: Notification[];
   pinnedApps: string[];
   recentApps: string[];
   openApp: (appId: string) => void;
@@ -96,7 +112,7 @@ type OSContextType = {
   toggleWidgetPanel: () => void;
   toggleSearchPanel: () => void;
   changeWallpaper: (url: string) => void;
-  addNotification: (notification: any) => void;
+  addNotification: (notification: Omit<Notification, "id" | "timestamp">) => void;
   dismissNotification: (id: string) => void;
   pinApp: (appId: string) => void;
   unpinApp: (appId: string) => void;
@@ -122,7 +138,7 @@ type OSContextType = {
   showAppProperties: (appId: string) => void;
 
   // Clipboard
-  clipboard: any | null;
+  clipboard: ClipboardData | null;
 
   // File System
   fileSystem: FileSystemItem[];
@@ -230,7 +246,7 @@ export const OSProvider: React.FC<{
   const [theme, setTheme] = useState<string>("light");
   const [apps, setApps] = useState<AppType[]>(registeredApps);
   const [openWindows, setOpenWindows] = useState<WindowState[]>([]);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [pinnedApps, setPinnedApps] = useState<string[]>([]);
   const [recentApps, setRecentApps] = useState<string[]>([]);
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
@@ -256,7 +272,7 @@ export const OSProvider: React.FC<{
   const [clipboard, setClipboard] = useState<any | null>(null);
 
   // Deleted apps tracking (for undo functionality)
-  const [deletedApps, setDeletedApps] = useState<AppType[]>([]);
+  const [_deletedApps, setDeletedApps] = useState<AppType[]>([]);
 
   // File System state
   const [fileSystem, setFileSystem] = useState<FileSystemItem[]>([]);
@@ -496,7 +512,7 @@ export const OSProvider: React.FC<{
   };
 
   // Notification system
-  const addNotification = (notification: any) => {
+  const addNotification = (notification: Omit<Notification, "id" | "timestamp">) => {
     const newNotification = {
       id: `notification-${Date.now()}`,
       timestamp: new Date(),
@@ -738,22 +754,6 @@ export const OSProvider: React.FC<{
       type: "info",
       persistent: true,
     });
-  };
-
-  // Generate a randomized position for new windows
-  const generateWindowPosition = () => {
-    const offsetX = Math.floor(Math.random() * 100);
-    const offsetY = Math.floor(Math.random() * 100);
-    return {
-      x: 100 + offsetX,
-      y: 100 + offsetY,
-    };
-  };
-
-  // Launch app function - uses openApp for consistency
-  const launchApp = (appId: string) => {
-    console.log("Launching app:", appId);
-    openApp(appId);
   };
 
   // Create default file system structure
@@ -1085,6 +1085,19 @@ export const OSProvider: React.FC<{
     }
   };
 
+  // App launching function - can be used as an alias for openApp or extended with additional functionality
+  const launchApp = (appId: string) => {
+    // For now, this is an alias to openApp
+    // In the future, you could add analytics, validation, or other pre-launch checks here
+    openApp(appId);
+    
+    // Add app to recent apps list
+    setRecentApps((prev) => {
+      const filtered = prev.filter((id) => id !== appId);
+      return [appId, ...filtered].slice(0, 6); // Keep only last 6
+    });
+  };
+
   // Context value
   const contextValue: OSContextType = {
     theme,
@@ -1116,7 +1129,7 @@ export const OSProvider: React.FC<{
     dismissNotification,
     pinApp,
     unpinApp,
-    launchApp,
+    launchApp,  // Now this function is properly defined
     clearNotifications,
     iconSize,
     changeIconSize,

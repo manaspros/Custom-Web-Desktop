@@ -31,22 +31,18 @@ export default function Taskbar({ className = "" }: TaskbarProps) {
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
-      setCurrentTime(
-        now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-      );
-      setCurrentDate(
-        now.toLocaleDateString([], {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })
-      );
+      // Add missing implementation to use the variable
+      setCurrentTime(now.toLocaleTimeString());
+      setCurrentDate(now.toLocaleDateString());
     };
 
+    // Call once immediately
     updateTime();
-    const intervalId = setInterval(updateTime, 1000);
 
-    return () => clearInterval(intervalId);
+    // Set up interval
+    const interval = setInterval(updateTime, 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   // Get all pinned and open apps for the taskbar

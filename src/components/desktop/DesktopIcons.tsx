@@ -94,7 +94,7 @@ export default function DesktopIcons() {
     });
 
     setSortedShortcuts(sorted);
-  }, [appShortcuts, viewSettings.sortBy, viewSettings.sortDirection]);
+  }, [appShortcuts, viewSettings.sortBy, viewSettings.sortDirection, viewSettings]); // Added viewSettings dependency
 
   // Handle single click (select icon)
   const handleIconClick = (id: string, e: React.MouseEvent) => {

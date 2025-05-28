@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import { useOS } from "@/components/contexts/OSContext";
 
 export default function NotificationCenter() {

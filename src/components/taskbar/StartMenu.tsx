@@ -5,7 +5,6 @@ export default function StartMenu() {
   const { toggleStartMenu, apps, openApp, pinnedApps, recentApps } = useOS();
   const startMenuRef = useRef<HTMLDivElement>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [allApps, setAllApps] = useState<typeof apps>([]);
   const [filteredApps, setFilteredApps] = useState<typeof apps>([]);
 
   // Click outside to close
@@ -29,7 +28,6 @@ export default function StartMenu() {
   useEffect(() => {
     // Sort apps alphabetically
     const sortedApps = [...apps].sort((a, b) => a.name.localeCompare(b.name));
-    setAllApps(sortedApps);
 
     // Filter apps based on search term
     if (searchTerm.trim() === "") {
