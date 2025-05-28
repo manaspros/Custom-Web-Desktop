@@ -26,6 +26,7 @@ interface WeatherData {
 
 export default function Weather({
   isWidget = false,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _windowId = "default",
 }: WeatherProps) {
   const { addNotification } = useOS();

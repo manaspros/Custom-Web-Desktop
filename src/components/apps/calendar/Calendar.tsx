@@ -7,7 +7,10 @@ interface CalendarProps {
   windowId?: string;
 }
 
-export default function Calendar({ windowId: _windowId = "default" }: CalendarProps) {
+export default function Calendar({ 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  windowId: _windowId = "default" 
+}: CalendarProps) {
   const { addNotification } = useOS();
 
   const [currentDate, setCurrentDate] = useState(new Date());

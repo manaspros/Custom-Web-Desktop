@@ -1,16 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useOS } from "@/components/contexts/OSContext";
 
 interface PDFViewerProps {
   windowId?: string;
 }
 
-export default function PDFViewer({ windowId: _windowId = "default" }: PDFViewerProps) {
+export default function PDFViewer({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  windowId: _windowId = "default"
+}: PDFViewerProps) {
   const { getFileById, getFileContent, addNotification, fileSystem } = useOS();
 
-  const [currentFileId, setCurrentFileId] = useState<string | null>(null);
+  // Prefix with _ to indicate intentional non-use or use in a conditional later
+  const [_currentFileId, setCurrentFileId] = useState<string | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>("No document open");
   const [showOpenDialog, setShowOpenDialog] = useState(false);
@@ -18,6 +22,38 @@ export default function PDFViewer({ windowId: _windowId = "default" }: PDFViewer
     { id: string; name: string }[]
   >([]);
   const [zoom, setZoom] = useState(100);
+
+  // Fix dependency issue with useCallback
+  const openPdfFile = useCallback(
+    (fileId: string) => {
+      const fileContent = getFileContent(fileId);
+      const file = getFileById(fileId);
+
+      console.log("File content:", fileContent);
+      console.log("File object:", file);
+
+      if (file && fileContent) {
+        // For PDFs, the content is a URL or data URI
+        setPdfUrl(fileContent);
+        setFileName(file.name);
+        setCurrentFileId(fileId);
+        setShowOpenDialog(false);
+
+        addNotification({
+          title: "PDF Viewer",
+          message: `Opened ${file.name}`,
+          icon: "pdfviewer",
+        });
+      } else {
+        addNotification({
+          title: "PDF Viewer",
+          message: "Could not open the file",
+          type: "error",
+        });
+      }
+    },
+    [getFileContent, getFileById, addNotification]
+  );
 
   // Load PDF files for open dialog
   useEffect(() => {
@@ -43,39 +79,10 @@ export default function PDFViewer({ windowId: _windowId = "default" }: PDFViewer
   // Remove unused variables from this effect
   useEffect(() => {
     // Load default example if needed for testing
-    // const examplePdfUrl = "/Manas_Choudhary_Resume.pdf"; 
-    
+    // const examplePdfUrl = "/Manas_Choudhary_Resume.pdf";
+
     // Rest of the effect logic
   }, []);
-
-  // Open PDF file function - make sure this works properly
-  const openPdfFile = (fileId: string) => {
-    const fileContent = getFileContent(fileId);
-    const file = getFileById(fileId);
-
-    console.log("File content:", fileContent);
-    console.log("File object:", file);
-
-    if (file && fileContent) {
-      // For PDFs, the content is a URL or data URI
-      setPdfUrl(fileContent);
-      setFileName(file.name);
-      setCurrentFileId(fileId);
-      setShowOpenDialog(false);
-
-      addNotification({
-        title: "PDF Viewer",
-        message: `Opened ${file.name}`,
-        icon: "pdfviewer",
-      });
-    } else {
-      addNotification({
-        title: "PDF Viewer",
-        message: "Could not open the file",
-        type: "error",
-      });
-    }
-  };
 
   // Open file dialog
   const handleOpen = () => {

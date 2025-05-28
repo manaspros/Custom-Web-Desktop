@@ -189,7 +189,7 @@ export default function SearchPanel() {
             {searchResults.apps.length === 0 &&
               searchResults.files.length === 0 && (
                 <div className="no-results">
-                  <p>No results found for "{searchQuery}"</p>
+                  <p>No results found for &quot;{searchQuery}&quot;</p>
                 </div>
               )}
           </div>

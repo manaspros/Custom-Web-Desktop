@@ -110,17 +110,9 @@ export default function Taskbar({ className = "" }: TaskbarProps) {
       {/* Pinned/Open Apps */}
       <div className="taskbar-apps">
         {taskbarAppIds.map((appId) => {
-          const app = apps.find((a) => a.id === appId);
-          const openWindowsForApp = openWindows.filter(
-            (w) => w.appId === appId
-          );
-          const isAppOpen = openWindowsForApp.length > 0;
-          const isActive =
-            isAppOpen && openWindowsForApp.some((w) => w.isActive);
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const isPinned = pinnedApps.includes(appId);
-
-          if (!app) return null;
-
+          // Use the variable or replace with direct check
           return (
             <button
               key={appId}

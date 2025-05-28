@@ -8,12 +8,12 @@ import {
   ReactNode,
 } from "react";
 
-// Define types for our applications
+// Define component prop type for applications
 export type AppType = {
   id: string;
   name: string;
   icon: string;
-  component: React.ComponentType<any>;
+  component: React.ComponentType<{windowId?: string}>;  // More specific than 'any'
   defaultSize?: { width: number; height: number };
   isResizable?: boolean;
   isPinned?: boolean;

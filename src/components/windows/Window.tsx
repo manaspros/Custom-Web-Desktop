@@ -200,9 +200,12 @@ export default function Window({ window, app }: WindowProps) {
             className="window-control-button maximize-btn"
             onClick={(e) => {
               e.stopPropagation();
-              window.isMaximized
-                ? restoreWindow(window.id)
-                : maximizeWindow(window.id);
+              // Fix the unused expression
+              if (window.isMaximized) {
+                restoreWindow(window.id);
+              } else {
+                maximizeWindow(window.id);
+              }
             }}
           >
             {window.isMaximized ? "❐" : "□"}

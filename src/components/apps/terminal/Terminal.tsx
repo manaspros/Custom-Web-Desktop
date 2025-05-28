@@ -12,7 +12,10 @@ interface CommandHistory {
   output: string;
 }
 
-export default function Terminal({ windowId: _windowId = "default" }: TerminalProps) {
+export default function Terminal({ 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  windowId: _windowId = "default" 
+}: TerminalProps) {
   const { addNotification } = useOS();
   const [input, setInput] = useState<string>("");
   const [commandHistory, setCommandHistory] = useState<CommandHistory[]>([]);

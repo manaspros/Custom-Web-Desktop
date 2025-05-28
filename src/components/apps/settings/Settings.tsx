@@ -223,7 +223,7 @@ export default function Settings() {
   const [autoStart, setAutoStart] = useState(false);
   const [language, setLanguage] = useState("en-US");
   const [timeFormat, setTimeFormat] = useState("12h");
-  const [availableWallpapers, setAvailableWallpapers] = useState([
+  const [wallpapers] = useState([
     { id: "default", path: "/wallpapers/default.png", name: "Default" },
     { id: "landscape", path: "/wallpapers/landscape.png", name: "Landscape" },
     { id: "abstract", path: "/wallpapers/abstract.jpg", name: "Abstract" },
@@ -294,7 +294,7 @@ export default function Settings() {
           <div className="wallpaper-section">
             <h3>Desktop Wallpaper</h3>
             <div className="wallpaper-grid">
-              {availableWallpapers.map((wp) => (
+              {wallpapers.map((wp) => (
                 <div
                   key={wp.id}
                   className={`wallpaper-item ${

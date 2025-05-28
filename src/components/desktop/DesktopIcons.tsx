@@ -1,5 +1,5 @@
 import { useOS } from "@/components/contexts/OSContext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 // Define the structure for app shortcut data
 interface AppShortcut {
@@ -14,56 +14,59 @@ export default function DesktopIcons() {
   const [selectedIcon, setSelectedIcon] = useState<string | null>(null);
   const [sortedShortcuts, setSortedShortcuts] = useState<AppShortcut[]>([]);
 
+  // Move app shortcuts to useMemo to fix dependencies
+  const appShortcuts = useMemo(
+    () => [
+      {
+        id: "shortcut-1",
+        name: "File Explorer",
+        icon: "📁",
+        appId: "explorer",
+      },
+      {
+        id: "browser",
+        name: "Edge",
+        icon: "🌐",
+        appId: "browser",
+      },
+      {
+        id: "notepad",
+        name: "Notepad",
+        icon: "📝",
+        appId: "notepad",
+      },
+      {
+        id: "calendar",
+        name: "Calendar",
+        icon: "📅",
+        appId: "calendar",
+      },
+      {
+        id: "weather",
+        name: "Weather",
+        icon: "🌤️",
+        appId: "weather",
+      },
+      {
+        id: "calculator",
+        name: "Calculator",
+        icon: "🧮",
+        appId: "calculator",
+      },
+      {
+        id: "settings",
+        name: "Settings",
+        icon: "⚙️",
+        appId: "settings",
+      },
+    ],
+    []
+  );
+
   // Debug
   useEffect(() => {
     console.log("DesktopIcons mounted, launchApp available:", !!launchApp);
   }, [launchApp]);
-
-  // App shortcuts data - can be moved to a config file or context
-  const appShortcuts: AppShortcut[] = [
-    {
-      id: "shortcut-1",
-      name: "File Explorer",
-      icon: "📁",
-      appId: "explorer", // Make sure this matches the ID in AppRegistry.tsx
-    },
-    {
-      id: "browser",
-      name: "Edge",
-      icon: "🌐",
-      appId: "browser",
-    },
-    {
-      id: "notepad",
-      name: "Notepad",
-      icon: "📝",
-      appId: "notepad",
-    },
-    {
-      id: "calendar",
-      name: "Calendar",
-      icon: "📅",
-      appId: "calendar",
-    },
-    {
-      id: "weather",
-      name: "Weather",
-      icon: "🌤️",
-      appId: "weather",
-    },
-    {
-      id: "calculator",
-      name: "Calculator",
-      icon: "🧮",
-      appId: "calculator",
-    },
-    {
-      id: "settings",
-      name: "Settings",
-      icon: "⚙️",
-      appId: "settings",
-    },
-  ];
 
   // Auto-sort app shortcuts when sort settings change
   useEffect(() => {
