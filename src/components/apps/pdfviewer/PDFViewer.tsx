@@ -13,8 +13,8 @@ export default function PDFViewer({
 }: PDFViewerProps) {
   const { getFileById, getFileContent, addNotification, fileSystem } = useOS();
 
-  // Prefix with _ to indicate intentional non-use or use in a conditional later
-  const [_currentFileId, setCurrentFileId] = useState<string | null>(null);
+  // Using currentFileId for tracking the open file (no underscore since we're using it)
+  const [currentFileId, setCurrentFileId] = useState<string | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>("No document open");
   const [showOpenDialog, setShowOpenDialog] = useState(false);

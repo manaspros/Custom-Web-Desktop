@@ -15,7 +15,6 @@ export default function Taskbar({ className = "" }: TaskbarProps) {
     isWidgetPanelOpen,
     toggleSearchPanel,
     isSearchPanelOpen,
-    apps,
     openWindows,
     pinnedApps,
     openApp,
@@ -110,9 +109,14 @@ export default function Taskbar({ className = "" }: TaskbarProps) {
       {/* Pinned/Open Apps */}
       <div className="taskbar-apps">
         {taskbarAppIds.map((appId) => {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const isPinned = pinnedApps.includes(appId);
-          // Use the variable or replace with direct check
+          // Fixed - Get app info for display
+          const app = openWindows.find((w) => w.appId === appId);
+          const isActive = openWindows.some(
+            (w) => w.appId === appId && w.isActive
+          );
+          const isAppOpen = openWindows.some((w) => w.appId === appId);
+          const openWindowsForApp = openWindows.filter((w) => w.appId === appId);
+
           return (
             <button
               key={appId}
@@ -158,7 +162,9 @@ export default function Taskbar({ className = "" }: TaskbarProps) {
               }}
             >
               {" "}
-              <span className="app-icon-text">{app.name[0]}</span>
+              <span className="app-icon-text">
+                {app ? app.title[0] : appId[0].toUpperCase()}
+              </span>
             </button>
           );
         })}
