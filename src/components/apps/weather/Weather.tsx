@@ -24,6 +24,7 @@ interface WeatherData {
 }
 
 export default function Weather({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   windowId = "default",
   isWidget = false,
 }: WeatherProps) {

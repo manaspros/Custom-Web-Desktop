@@ -8,6 +8,7 @@ interface PDFViewerProps {
 }
 
 export default function PDFViewer({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   windowId: _windowId = "default",
 }: PDFViewerProps) {
   const { getFileById, getFileContent, addNotification, fileSystem } = useOS();

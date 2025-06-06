@@ -215,6 +215,7 @@ const Dropdown: React.FC<DropdownProps> = ({ value, options, onChange }) => {
 
 // Main Settings App Component
 export default function Settings({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   windowId: _windowId = "default",
 }: {
   windowId?: string;
