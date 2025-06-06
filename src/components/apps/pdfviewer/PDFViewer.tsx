@@ -9,12 +9,12 @@ interface PDFViewerProps {
 
 export default function PDFViewer({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  windowId: _windowId = "default"
+  windowId: _windowId = "default",
 }: PDFViewerProps) {
   const { getFileById, getFileContent, addNotification, fileSystem } = useOS();
 
-  // Using currentFileId for tracking the open file (no underscore since we're using it)
-  const [currentFileId, setCurrentFileId] = useState<string | null>(null);
+  // Using currentFileId for tracking the open file (prefix with underscore since it's set but not used elsewhere)
+  const [_currentFileId, setCurrentFileId] = useState<string | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>("No document open");
   const [showOpenDialog, setShowOpenDialog] = useState(false);
@@ -80,7 +80,6 @@ export default function PDFViewer({
   useEffect(() => {
     // Load default example if needed for testing
     // const examplePdfUrl = "/Manas_Choudhary_Resume.pdf";
-
     // Rest of the effect logic
   }, []);
 

@@ -108,7 +108,7 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
   readOnly = false,
 }) => {
   // Create a proper onChange handler that prevents changes if readOnly
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = () => {
     if (!readOnly) {
       onChange();
     }
