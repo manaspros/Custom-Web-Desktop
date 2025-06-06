@@ -14,6 +14,7 @@ export default function PDFViewer({
   const { getFileById, getFileContent, addNotification, fileSystem } = useOS();
 
   // Using currentFileId for tracking the open file (prefix with underscore since it's set but not used elsewhere)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_currentFileId, setCurrentFileId] = useState<string | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>("No document open");
