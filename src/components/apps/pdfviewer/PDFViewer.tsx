@@ -7,10 +7,7 @@ interface PDFViewerProps {
   windowId?: string;
 }
 
-export default function PDFViewer({
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  windowId: _windowId = "default",
-}: PDFViewerProps) {
+export default function PDFViewer({ windowId = "default" }: PDFViewerProps) {
   const { getFileById, getFileContent, addNotification, fileSystem } = useOS();
 
   // Using currentFileId for tracking the open file (prefix with underscore since it's set but not used elsewhere)

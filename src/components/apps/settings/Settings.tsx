@@ -214,7 +214,11 @@ const Dropdown: React.FC<DropdownProps> = ({ value, options, onChange }) => {
 };
 
 // Main Settings App Component
-export default function Settings() {
+export default function Settings({
+  windowId = "default",
+}: {
+  windowId?: string;
+}) {
   const { theme, toggleTheme, wallpaper, changeWallpaper, addNotification } =
     useOS();
 

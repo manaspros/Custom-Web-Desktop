@@ -4,9 +4,8 @@ import { useState, useEffect } from "react";
 import { useOS } from "@/components/contexts/OSContext";
 
 interface WeatherProps {
+  windowId?: string;
   isWidget?: boolean;
-  // Using _ prefix to indicate intentionally unused parameter
-  _windowId?: string;
 }
 
 interface WeatherData {
@@ -25,9 +24,8 @@ interface WeatherData {
 }
 
 export default function Weather({
+  windowId = "default",
   isWidget = false,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _windowId = "default",
 }: WeatherProps) {
   const { addNotification } = useOS();
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
