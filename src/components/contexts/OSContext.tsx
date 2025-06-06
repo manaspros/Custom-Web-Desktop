@@ -258,7 +258,7 @@ export const OSProvider: React.FC<{
     useState(false);
   const [isWidgetPanelOpen, setIsWidgetPanelOpen] = useState(false);
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
-  const [wallpaper, setWallpaper] = useState("/wallpapers/default.jpg");
+  const [wallpaper, setWallpaper] = useState("/wallpapers/landscape.png"); // Changed from default.png
   const [highestZIndex, setHighestZIndex] = useState(0);
   const [iconSize, setIconSize] = useState<IconSize>("medium");
 

@@ -58,7 +58,20 @@ You can switch between light and dark themes in the Settings app or by toggling 
 
 ### Wallpaper
 
-You can change the desktop background from the Settings app.
+You can change the desktop background from the Settings app. Available wallpapers include:
+
+- Default Windows 11 style
+- Landscape scenes
+- Abstract designs
+- Dark theme wallpapers
+- Light theme wallpapers
+
+To change wallpaper:
+
+1. Open Settings from the Start Menu
+2. Go to Personalization section
+3. Select from available wallpapers
+4. Click to apply
 
 ## Extending
 
@@ -66,11 +79,13 @@ Developers can add new applications by:
 
 1. Creating a new component in `/src/components/apps/`
 2. Adding the app to the registry in `AppRegistry.tsx`
+3. Adding custom wallpapers to `/public/wallpapers/` directory
 
 ## Troubleshooting
 
 - If windows behave unexpectedly, try refreshing the page
 - Check the browser console for any error messages
+- Wallpaper changes apply immediately
 
 ---
 
