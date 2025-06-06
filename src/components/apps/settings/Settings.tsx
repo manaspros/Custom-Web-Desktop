@@ -215,7 +215,7 @@ const Dropdown: React.FC<DropdownProps> = ({ value, options, onChange }) => {
 
 // Main Settings App Component
 export default function Settings({
-  windowId = "default",
+  windowId: _windowId = "default",
 }: {
   windowId?: string;
 }) {
