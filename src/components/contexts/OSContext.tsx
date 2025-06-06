@@ -13,7 +13,7 @@ export type AppType = {
   id: string;
   name: string;
   icon: string;
-  component: React.ComponentType<{windowId?: string}>;  // More specific than 'any'
+  component: React.ComponentType<{ windowId?: string }>; // More specific than 'any'
   defaultSize?: { width: number; height: number };
   isResizable?: boolean;
   isPinned?: boolean;
@@ -83,6 +83,7 @@ interface ClipboardData {
 type OSContextType = {
   theme: string;
   setTheme: (theme: string) => void;
+  toggleTheme: () => void;
   wallpaper: string;
   isStartMenuOpen: boolean;
   isNotificationCenterOpen: boolean;
@@ -112,7 +113,9 @@ type OSContextType = {
   toggleWidgetPanel: () => void;
   toggleSearchPanel: () => void;
   changeWallpaper: (url: string) => void;
-  addNotification: (notification: Omit<Notification, "id" | "timestamp">) => void;
+  addNotification: (
+    notification: Omit<Notification, "id" | "timestamp">
+  ) => void;
   dismissNotification: (id: string) => void;
   pinApp: (appId: string) => void;
   unpinApp: (appId: string) => void;
@@ -164,6 +167,7 @@ type OSContextType = {
 export const OSContext = createContext<OSContextType>({
   theme: "light",
   setTheme: () => {},
+  toggleTheme: () => {},
   wallpaper: "/wallpapers/default.jpg",
   isStartMenuOpen: false,
   isNotificationCenterOpen: false,
@@ -327,14 +331,18 @@ export const OSProvider: React.FC<{
         const parsedFs = JSON.parse(savedFileSystem);
         // Convert date strings back to Date objects
         // Use a specific type for the item parameter
-        const restoredFs = parsedFs.map((item: Omit<FileSystemItem, 'created' | 'modified'> & { 
-          created: string; 
-          modified: string 
-        }) => ({
-          ...item,
-          created: new Date(item.created),
-          modified: new Date(item.modified),
-        }));
+        const restoredFs = parsedFs.map(
+          (
+            item: Omit<FileSystemItem, "created" | "modified"> & {
+              created: string;
+              modified: string;
+            }
+          ) => ({
+            ...item,
+            created: new Date(item.created),
+            modified: new Date(item.modified),
+          })
+        );
         setFileSystem(restoredFs);
       } catch (e) {
         console.error("Failed to parse file system", e);
@@ -518,7 +526,9 @@ export const OSProvider: React.FC<{
   };
 
   // Notification system
-  const addNotification = (notification: Omit<Notification, "id" | "timestamp">) => {
+  const addNotification = (
+    notification: Omit<Notification, "id" | "timestamp">
+  ) => {
     const newNotification = {
       id: `notification-${Date.now()}`,
       timestamp: new Date(),
@@ -1096,7 +1106,7 @@ export const OSProvider: React.FC<{
     // For now, this is an alias to openApp
     // In the future, you could add analytics, validation, or other pre-launch checks here
     openApp(appId);
-    
+
     // Add app to recent apps list
     setRecentApps((prev) => {
       const filtered = prev.filter((id) => id !== appId);
@@ -1104,10 +1114,19 @@ export const OSProvider: React.FC<{
     });
   };
 
+  // Add toggle theme function
+  const toggleTheme = () => {
+    setTheme((prevTheme) => {
+      const newTheme = prevTheme === "light" ? "dark" : "light";
+      return newTheme;
+    });
+  };
+
   // Context value
   const contextValue: OSContextType = {
     theme,
     setTheme,
+    toggleTheme,
     wallpaper,
     isStartMenuOpen,
     isNotificationCenterOpen,
@@ -1135,7 +1154,7 @@ export const OSProvider: React.FC<{
     dismissNotification,
     pinApp,
     unpinApp,
-    launchApp,  // Now this function is properly defined
+    launchApp, // Now this function is properly defined
     clearNotifications,
     iconSize,
     changeIconSize,
